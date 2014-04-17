@@ -6,6 +6,8 @@ nom = Nom.new
 
 cmd = ARGV.shift
 
+cmd = "status" if cmd.nil?
+
 case cmd
 when "nom"
     raise "Please specify food and kcal" if ARGV.size < 2
@@ -13,6 +15,7 @@ when "nom"
     raise "kcal must be positive" if kcal == 0
     description = ARGV.join(" ")
     nom.nom(Date.today, kcal, description)
+    nom.status()
 when "weight"
     raise "Please specify weight" if ARGV.size != 1
     weight = ARGV.pop.to_f
@@ -21,6 +24,8 @@ when "plot"
     nom.plot()
 when "search"
     nom.search(ARGV.join(" "))
-else
+when "status"
     nom.status()
+else
+    puts "Unknown subcommand"
 end
