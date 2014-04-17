@@ -171,7 +171,7 @@ set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
-'/tmp/nom.dat' using 1:3 smooth cspline w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
+'/tmp/nom.dat' using 1:3 w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
 (#{@goal}) w l t 'Target' lw 2 lt 1, \
 x>=#{(@weights.last.date-Date.parse("2000-01-01"))/7.0}*60*60*24*7 ? #{moving_average}-#{@rate}*(x/60/60/24/7-#{(@weights.last.date-Date.parse("2000-01-01"))/7.0}) : 0/0 t '#{(@rate*4).round(1)} kg/month' lc rgb "forest-green"
 HERE
