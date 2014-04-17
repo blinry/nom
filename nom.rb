@@ -117,12 +117,12 @@ class Nom
                 size = serving.css("a.servb").text
                 kcal = serving.css("div")[5].css("div")[1].text.to_i
                 #kj = serving.css("div")[2].css("div")[1].text.to_i
-                points = (kcal/@unit).round
+                points = quantize(kcal)
 
                 #next if size =~ /100 g/
 
                 #puts "    (#{points})#{points>9 ? "" : " "} #{size}"
-                puts "    (#{points}) #{kcal} kcal: #{size}"
+                puts "    (#{points}) #{size}"
             end
         end
     end
@@ -185,7 +185,7 @@ HERE
     private
 
     def allowed_kcal d
-        allowed = @weights.first.weight*25*1.25 - @rate*1000
+        allowed = @weights.first.weight*25*1.2 - @rate*1000
         adapt_every = 2 # days
         i = -1
         start_date.upto(d) do |date|
