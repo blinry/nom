@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require_relative "nom"
+
+nom = Nom.new
+
+cmd = ARGV.shift
+
+case cmd
+when "nom"
+    raise "Please specify food and kcal" if ARGV.size < 2
+    kcal = ARGV.pop.to_i
+    raise "kcal must be positive" if kcal == 0
+    description = ARGV.join(" ")
+    nom.nom(Date.today, kcal, description)
+when "weight"
+    raise "Please specify weight" if ARGV.size != 1
+    weight = ARGV.pop.to_f
+    nom.weight(Date.today, weight)
+when "plot"
+    nom.plot()
+when "search"
+    nom.search(ARGV.join(" "))
+else
+    nom.status()
+end
