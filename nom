@@ -5,7 +5,6 @@ require_relative "nom"
 nom = Nom.new
 
 cmd = ARGV.shift
-
 cmd = "status" if cmd.nil?
 
 case cmd
@@ -26,6 +25,8 @@ when "search"
     nom.search(ARGV.join(" "))
 when "status"
     nom.status()
+when "help"
+    puts "Available subcommands: nom, weight, plot, search, status, help."
 else
     puts "Unknown subcommand"
 end

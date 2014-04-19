@@ -77,17 +77,22 @@ class Nom
 
     def status
         remaining = 0
-        puts "Current weight: #{current_weight}"
-        puts
         start_date.upto(Date.today) do |date|
-            puts date
-            remaining += quantize(allowed_kcal(date))
-            puts "    Allowed: (#{remaining})"
-            @inputs.select{|i| i.date == date }.each do |i|
-                puts "    (#{quantize(i.kcal)}) #{i.description}"
-                remaining -= quantize(i.kcal)
+            show = date >= Date.today - 1
+            remaining += allowed_kcal(date)
+            if show
+                puts date
+                puts "    Allowed: (#{quantize(remaining)})"
             end
-            puts "    Remaining: (#{remaining})"
+            @inputs.select{|i| i.date == date }.each do |i|
+                if show
+                    puts "    (#{quantize(i.kcal)}) #{i.description}"
+                end
+                remaining -= i.kcal
+            end
+            if show
+                puts "    Remaining: (#{quantize(remaining)})"
+            end
         end
     end
 
