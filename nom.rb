@@ -76,11 +76,12 @@ class Nom
     end
 
     def status
+        remaining = 0
         puts "Current weight: #{current_weight}"
         puts
         start_date.upto(Date.today) do |date|
             puts date
-            remaining = quantize(allowed_kcal(date))
+            remaining += quantize(allowed_kcal(date))
             puts "    Allowed: (#{remaining})"
             @inputs.select{|i| i.date == date }.each do |i|
                 puts "    (#{quantize(i.kcal)}) #{i.description}"
@@ -137,7 +138,7 @@ class Nom
             while e.date > last_date + 1
                 last_weight = last_weight + (last_weight-e.weight)/(last_date-e.date)
                 moving_average = beta*moving_average + (1-beta)*last_weight
-                dat << "#{last_date+1}\t#{last_weight}\t#{moving_average}\n"
+                dat << "#{last_date+1}\t0\t#{moving_average}\n"
                 last_date += 1
             end
             moving_average = beta*moving_average + (1-beta)*e.weight
@@ -186,13 +187,13 @@ HERE
 
     def allowed_kcal d
         allowed = @weights.first.weight*25*1.2 - @rate*1000
-        adapt_every = 2 # days
+        adapt_every = 7 # days
         i = -1
         start_date.upto(d) do |date|
             i += 1
             if i == adapt_every
-                weight_before = weight(date-adapt_every)
-                weight_now = weight(date)
+                weight_before = weight_at(date-adapt_every)
+                weight_now = weight_at(date)
                 loss = weight_before - weight_now
                 kcal_per_kg_body_fat = 7000
                 burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
@@ -205,7 +206,7 @@ HERE
         allowed
     end
 
-    def weight date
+    def weight_at date
         w = @weights.select{|w| w.date == date }
         if w.empty?
             raise "todo"
