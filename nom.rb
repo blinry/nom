@@ -62,13 +62,14 @@ class Nom
         @unit = config["unit"].to_f
 
         weight_file = @config_dir+"weight"
-        input_file = @config_dir+"input"
         FileUtils.touch(weight_file)
-        FileUtils.touch(input_file)
         IO.readlines(weight_file).each do |line|
             @weights << WeightEntry::from_line(line)
         end
         @weights.sort_by{|e| e.date}
+
+        input_file = @config_dir+"input"
+        FileUtils.touch(input_file)
         IO.readlines(input_file).each do |line|
             @inputs << FoodEntry::from_line(line)
         end
@@ -102,6 +103,7 @@ class Nom
     end
 
     def nom date, kcal, description
+        kcal = calculate(kcal)
         @inputs << FoodEntry.new(date, kcal, description)
         write_inputs
     end
@@ -263,5 +265,14 @@ HERE
 
     def quantize kcal
         return (kcal/@unit).round
+    end
+
+    def calculate term
+        factors = term.split("x")
+        product = factors.map{ |f| f.to_i }.inject(1){ |p,f| p*f }
+        if product == 0
+            raise "kcal term cannot be zero"
+        end
+        return product
     end
 end

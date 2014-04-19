@@ -10,8 +10,7 @@ cmd = "status" if cmd.nil?
 case cmd
 when "nom"
     raise "Please specify food and kcal" if ARGV.size < 2
-    kcal = ARGV.pop.to_i
-    raise "kcal must be positive" if kcal == 0
+    kcal = ARGV.pop
     description = ARGV.join(" ")
     nom.nom(Date.today, kcal, description)
     nom.status()
