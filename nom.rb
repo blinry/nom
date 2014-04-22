@@ -269,7 +269,7 @@ HERE
 
     def calculate term
         factors = term.split("x")
-        product = factors.map{ |f| f.to_i }.inject(1){ |p,f| p*f }
+        product = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
         if product == 0
             raise "kcal term cannot be zero"
         end
