@@ -8,19 +8,19 @@ cmd = ARGV.shift
 cmd = "status" if cmd.nil?
 
 case cmd
-when "nom"
+when "nom", "n"
     raise "Please specify food and kcal" if ARGV.size < 2
     kcal = ARGV.pop
     description = ARGV.join(" ")
     nom.nom(Date.today, kcal, description)
     nom.status()
-when "weight"
+when "weight", "w"
     raise "Please specify weight" if ARGV.size != 1
     weight = ARGV.pop.to_f
     nom.weight(Date.today, weight)
-when "plot"
+when "plot", "p"
     nom.plot()
-when "search"
+when "search", "s"
     nom.search(ARGV.join(" "))
 when "status"
     nom.status()
