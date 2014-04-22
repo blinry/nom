@@ -25,7 +25,13 @@ when "search", "s"
 when "status"
     nom.status()
 when "help"
-    puts "Available subcommands: nom, weight, plot, search, status, help."
+    puts "Available subcommands:"
+    puts "   status                       Display a short food log and remaining energy"
+    puts "   nom <description> <energy>   Report that you ate something"
+    puts "   weight <weight>              Report a weight measurement"
+    puts "   plot                         Plot a weight graph"
+    puts "   search <term>                Search for a food item in the web"
+    puts "   help                         Print this help"
 else
     puts "Unknown subcommand"
 end
