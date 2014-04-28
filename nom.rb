@@ -77,6 +77,10 @@ class Nom
     end
 
     def status
+        kg_lost = @weights.first.weight - current_weight
+        kg_to_go = current_weight - @goal
+        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
+        puts
         log_since(Date.today - 1)
     end
 
