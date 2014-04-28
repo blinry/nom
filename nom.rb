@@ -77,29 +77,17 @@ class Nom
     end
 
     def status
-        remaining = 0
-        start_date.upto(Date.today) do |date|
-            show = date >= Date.today - 1
-            remaining += allowed_kcal(date)
-            if show
-                puts date
-                puts "    Allowed: (#{quantize(remaining)})"
-            end
-            @inputs.select{|i| i.date == date }.each do |i|
-                if show
-                    puts "    (#{quantize(i.kcal)}) #{i.description}"
-                end
-                remaining -= i.kcal
-            end
-            if show
-                puts "    Remaining: (#{quantize(remaining)})"
-            end
-        end
+        log_since(Date.today - 1)
+    end
+
+    def log
+        log_since(start_date)
     end
 
     def weight date, weight
         @weights << WeightEntry.new(date, weight)
         write_weights
+        plot
     end
 
     def nom date, kcal, description
@@ -181,7 +169,7 @@ set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
 '/tmp/nom.dat' using 1:3 w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
 (#{@goal}) w l t 'Target' lw 2 lt 1, \
-x>=#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}*60*60*24*7 ? #{moving_average}-#{@rate}*(x/60/60/24/7-#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}) : 0/0 t '#{(@rate*4).round(1)} kg/month' lc rgb "forest-green"
+#{@weights.first.weight}-#{@rate}*(x/60/60/24/7-#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green"
 HERE
 
         File.write("/tmp/nom.dat", dat)
@@ -274,5 +262,26 @@ HERE
             raise "kcal term cannot be zero"
         end
         return product
+    end
+
+    def log_since start
+        remaining = 0
+        start_date.upto(Date.today) do |date|
+            show = date >= start
+            remaining += allowed_kcal(date)
+            if show
+                puts date
+                puts "    Available: (#{quantize(remaining)}) of (#{quantize(allowed_kcal(date))})"
+            end
+            @inputs.select{|i| i.date == date }.each do |i|
+                if show
+                    puts "    (#{quantize(i.kcal)}) #{i.description}"
+                end
+                remaining -= i.kcal
+            end
+            if show
+                puts "    Remaining: (#{quantize(remaining)})"
+            end
+        end
     end
 end

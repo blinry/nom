@@ -20,6 +20,8 @@ when "weight", "w"
     nom.weight(Date.today, weight)
 when "plot", "p"
     nom.plot()
+when "log", "l"
+    nom.log()
 when "search", "s"
     nom.search(ARGV.join(" "))
 when "status"
