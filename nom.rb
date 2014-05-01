@@ -61,19 +61,19 @@ class Nom
         @rate = config["rate"].to_f
         @unit = config["unit"].to_f
 
-        weight_file = @config_dir+"weight"
-        FileUtils.touch(weight_file)
-        IO.readlines(weight_file).each do |line|
-            @weights << WeightEntry::from_line(line)
-        end
-        @weights.sort_by{|e| e.date}
+        @weights = read_file("weight", WeightEntry)
+        @inputs = read_file("input", FoodEntry)
 
-        input_file = @config_dir+"input"
-        FileUtils.touch(input_file)
-        IO.readlines(input_file).each do |line|
-            @inputs << FoodEntry::from_line(line)
+    end
+
+    def read_file name, klass
+        result = []
+        file = @config_dir+name
+        FileUtils.touch(file)
+        IO.readlines(file).each do |line|
+            result << klass::from_line(line)
         end
-        @inputs.sort_by{|e| e.date}
+        result.sort_by{|e| e.date}
     end
 
     def status
@@ -193,7 +193,6 @@ HERE
                 weight_before = moving_average_at(date-adapt_every)
                 weight_now = moving_average_at(date)
                 loss = weight_before - weight_now
-                p loss
                 kcal_per_kg_body_fat = 7000
                 burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
                 wanted_to_burn_per_day = @rate*1000
