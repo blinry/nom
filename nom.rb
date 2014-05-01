@@ -129,21 +129,8 @@ class Nom
 
     def plot
         dat = ""
-        moving_average = @weights.first.weight
-        last_date = @weights.first.date
-        last_weight = @weights.first.weight
-        beta = 0.90
         @weights.each do |e|
-            while e.date > last_date + 1
-                last_weight = last_weight + (last_weight-e.weight)/(last_date-e.date)
-                moving_average = beta*moving_average + (1-beta)*last_weight
-                dat << "#{last_date+1}\t0\t#{moving_average}\n"
-                last_date += 1
-            end
-            moving_average = beta*moving_average + (1-beta)*e.weight
-            dat << "#{e.date}\t#{e.weight}\t#{moving_average}\n"
-            last_date = e.date
-            last_weight = e.weight
+            dat << "#{e.date}\t#{weight_at(e.date)}\t#{moving_average_at(e.date)}\n"
         end
 
         plt = <<HERE
@@ -194,12 +181,19 @@ HERE
         allowed = @weights.first.weight*25*1.2 - @rate*1000
         adapt_every = 7 # days
         i = -1
+        skipped_first_block = false
         start_date.upto(d) do |date|
             i += 1
             if i == adapt_every
-                weight_before = weight_at(date-adapt_every)
-                weight_now = weight_at(date)
+                if not skipped_first_block
+                    skipped_first_block = true
+                    i = 0
+                    next
+                end
+                weight_before = moving_average_at(date-adapt_every)
+                weight_now = moving_average_at(date)
                 loss = weight_before - weight_now
+                p loss
                 kcal_per_kg_body_fat = 7000
                 burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
                 wanted_to_burn_per_day = @rate*1000
@@ -214,10 +208,25 @@ HERE
     def weight_at date
         w = @weights.select{|w| w.date == date }
         if w.empty?
-            raise "todo"
+            prev_weight = @weights.select{|w| w.date < date }.max_by{|w| w.date}
+            next_weight = @weights.select{|w| w.date > date }.min_by{|w| w.date}
+            raise "todo" if next_weight.nil?
+            prev_weight.weight + (prev_weight.weight-next_weight.weight)/(prev_weight.date-next_weight.date)*(date-prev_weight.date)
         else
             w.first.weight
         end
+    end
+
+    def beta
+        0.8
+    end
+
+    def moving_average_at date
+        average = weight_at(start_date)
+        start_date.upto(date) do |d|
+            average = beta*average + (1-beta)*weight_at(d)
+        end
+        return average
     end
 
     def write_weights
