@@ -130,7 +130,7 @@ class Nom
     def plot
         dat = ""
         @weights.each do |e|
-            dat << "#{e.date}\t#{weight_at(e.date)}\t#{moving_average_at(e.date)}\n"
+            dat << "#{e.date}\t#{weight_at(e.date)}\t#{moving_average_at(e.date)}\t#{allowed_kcal(e.date)}\t#{consumed_at(e.date)}\n"
         end
 
         plt = <<HERE
@@ -142,14 +142,16 @@ set xdata time
 set timefmt "%Y-%m-%d"
 set format x "%Y-%m"
 
-set xrange [ "#{@weights.first.date}" : "#{Date.today+days_to_go}" ]
+set xrange [ "#{start_date}" : "#{Date.today+days_to_go}" ]
 set yrange [ #{@goal-1} : #{@weights.map{|w| w.weight}.max+0.5} ]
+set y2range [ 0 : 3000 ]
 set grid
 
 set ytics 1
+set y2tics 500
 set mxtics 4
 set xtics nomirror
-set samples 300
+set ytics nomirror
 
 set terminal svg size 1920,700 font "Linux Biolinum,20"
 set output "/tmp/nom.svg"
@@ -159,8 +161,10 @@ set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
 '/tmp/nom.dat' using 1:3 w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
-(#{@goal}) w l t 'Target' lw 2 lt 1, \
-#{@weights.first.weight}-#{@rate}*(x/60/60/24/7-#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green"
+(#{@goal}) w l t 'Goal' lw 2 lt 1, \
+#{@weights.first.weight}-#{@rate}*(x/60/60/24/7-#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green", \
+'/tmp/nom.dat' using 1:5 w l t 'Allowed energy' lt 3 axes x1y2, \
+'/tmp/nom.dat' using 1:4 w l t 'Consumed energy' lt 5 axes x1y2
 HERE
 
         File.write("/tmp/nom.dat", dat)
@@ -179,7 +183,7 @@ HERE
 
     def allowed_kcal d
         allowed = @weights.first.weight*25*1.2 - @rate*1000
-        adapt_every = 7 # days
+        adapt_every = 2 # days
         i = -1
         skipped_first_block = false
         start_date.upto(d) do |date|
@@ -214,6 +218,10 @@ HERE
         else
             w.first.weight
         end
+    end
+
+    def consumed_at date
+        @inputs.select{|i| i.date == date }.inject(0){ |sum, i| sum+i.kcal }
     end
 
     def beta
