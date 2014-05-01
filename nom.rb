@@ -182,6 +182,12 @@ HERE
         system("eog /tmp/nom.svg")
     end
 
+    def edit
+        editor = ENV["EDITOR"]
+        editor = "vim" if editor.nil?
+        system("#{editor} #{ENV["HOME"]}/.nom/input")
+    end
+
     private
 
     def allowed_kcal d

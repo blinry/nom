@@ -26,6 +26,8 @@ when "search", "s"
     nom.search(ARGV.join(" "))
 when "status"
     nom.status()
+when "edit", "e"
+    nom.edit()
 when "help"
     puts "Available subcommands:"
     puts "   status                       Display a short food log and remaining energy"
