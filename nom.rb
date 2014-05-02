@@ -60,6 +60,7 @@ class Nom
         @goal = config["goal"].to_f
         @rate = config["rate"].to_f
         @unit = config["unit"].to_f
+        @skip_first = 7
 
         @weights = read_file("weight", WeightEntry)
         @inputs = read_file("input", FoodEntry)
@@ -129,8 +130,8 @@ class Nom
 
     def plot
         dat = ""
-        @weights.each do |e|
-            dat << "#{e.date}\t#{weight_at(e.date)}\t#{moving_average_at(e.date)}\t#{allowed_kcal(e.date)}\t#{consumed_at(e.date)}\n"
+        (start_date).upto(end_date) do |date|
+            dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t#{allowed_kcal(date)}\t#{consumed_at(date)}\n"
         end
 
         plt = <<HERE
@@ -143,7 +144,7 @@ set timefmt "%Y-%m-%d"
 set format x "%Y-%m"
 
 set xrange [ "#{start_date}" : "#{Date.today+days_to_go}" ]
-set yrange [ #{@goal-1} : #{@weights.map{|w| w.weight}.max+0.5} ]
+set yrange [ #{(@goal-1).floor} : #{@weights.map{|w| w.weight}.max.ceil} ]
 set y2range [ 0 : 3000 ]
 set grid
 
@@ -162,9 +163,9 @@ set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
 '/tmp/nom.dat' using 1:3 w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
 (#{@goal}) w l t 'Goal' lw 2 lt 1, \
-#{@weights.first.weight}-#{@rate}*(x/60/60/24/7-#{(@weights.first.date-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green", \
-'/tmp/nom.dat' using 1:5 w l t 'Allowed energy' lt 3 axes x1y2, \
-'/tmp/nom.dat' using 1:4 w l t 'Consumed energy' lt 5 axes x1y2
+#{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green", \
+'/tmp/nom.dat' using 1:4 w histeps t 'Allowed energy' lt 5 axes x1y2, \
+'/tmp/nom.dat' using 1:5 w histeps t 'Consumed energy' axes x1y2
 HERE
 
         File.write("/tmp/nom.dat", dat)
@@ -183,7 +184,7 @@ HERE
 
     def allowed_kcal d
         allowed = @weights.first.weight*25*1.2 - @rate*1000
-        adapt_every = 2 # days
+        adapt_every = 7 # days
         i = -1
         skipped_first_block = false
         start_date.upto(d) do |date|
@@ -197,11 +198,16 @@ HERE
                 weight_before = moving_average_at(date-adapt_every)
                 weight_now = moving_average_at(date)
                 loss = weight_before - weight_now
+                intake = 0
+                (date-adapt_every).upto(date-1) do |d|
+                    intake += consumed_at(d)
+                end
                 kcal_per_kg_body_fat = 7000
                 burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
                 wanted_to_burn_per_day = @rate*1000
                 burned_too_little = wanted_to_burn_per_day - burned_kcal_per_day
-                allowed = allowed - burned_too_little
+                intake_per_day = intake/adapt_every
+                allowed = intake_per_day - burned_too_little
                 i = 0
             end
         end
@@ -225,7 +231,7 @@ HERE
     end
 
     def beta
-        0.8
+        0.85
     end
 
     def moving_average_at date
@@ -274,6 +280,10 @@ HERE
     end
 
     def end_date
+        @weights.last.date
+    end
+
+    def goal_date
         Date.today + days_to_go
     end
 
