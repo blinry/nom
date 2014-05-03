@@ -161,7 +161,7 @@ set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
-'/tmp/nom.dat' using 1:3 w l t sprintf("Moving average λ=%1.2f",#{beta}) lt 1 lw 2 lc rgb "navy", \
+'/tmp/nom.dat' using 1:3 w l t '' lt 1 lw 2 lc rgb "navy", \
 (#{@goal}) w l t 'Goal' lw 2 lt 1, \
 #{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green", \
 '/tmp/nom.dat' using 1:4 w histeps t 'Allowed energy' lt 5 axes x1y2, \
@@ -230,16 +230,23 @@ HERE
         @inputs.select{|i| i.date == date }.inject(0){ |sum, i| sum+i.kcal }
     end
 
+    def alpha
+        0.1
+    end
+
     def beta
-        0.85
+        0.1
     end
 
     def moving_average_at date
         average = weight_at(start_date)
-        start_date.upto(date) do |d|
-            average = beta*average + (1-beta)*weight_at(d)
+        trend = -@rate/7.0
+        (start_date+1).upto(date) do |d|
+            last_average = average
+            average = alpha*weight_at(d) + (1-alpha)*(average+trend)
+            trend = beta*(average-last_average) + (1-beta)*trend
         end
-        return average
+        average
     end
 
     def write_weights
