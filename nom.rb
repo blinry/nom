@@ -78,8 +78,8 @@ class Nom
     end
 
     def status
-        kg_lost = @weights.first.weight - current_weight
-        kg_to_go = current_weight - @goal
+        kg_lost = moving_average_at(start_date) - moving_average_at(Date.today)
+        kg_to_go = moving_average_at(Date.today) - @goal
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
         puts
         log_since(Date.today - 1)
@@ -171,7 +171,7 @@ HERE
         File.write("/tmp/nom.dat", dat)
         File.write("/tmp/nom.plt", plt)
         system("gnuplot /tmp/nom.plt")
-        system("eog /tmp/nom.svg")
+        system("eog -f /tmp/nom.svg")
     end
 
     def edit
@@ -266,7 +266,7 @@ HERE
     end
 
     def current_weight
-        @weights.last.weight
+        weight_at(Date.today)
     end
 
     def kg_to_go
