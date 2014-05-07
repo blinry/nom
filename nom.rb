@@ -154,7 +154,7 @@ set mxtics 4
 set xtics nomirror
 set ytics nomirror
 
-set terminal svg size 1920,700 font "Linux Biolinum,20"
+set terminal svg size 1440,900 font "Linux Biolinum,20"
 set output "/tmp/nom.svg"
 
 set obj 1 rectangle behind from screen 0,0 to screen 1,1
@@ -230,15 +230,9 @@ HERE
         @inputs.select{|i| i.date == date }.inject(0){ |sum, i| sum+i.kcal }
     end
 
-    def alpha
-        0.1
-    end
-
-    def beta
-        0.1
-    end
-
     def moving_average_at date
+        alpha = 0.1
+        beta = 0.1
         average = weight_at(start_date)
         trend = -@rate/7.0
         (start_date+1).upto(date) do |d|
