@@ -184,17 +184,19 @@ HERE
 
     def allowed_kcal d
         allowed = @weights.first.weight*25*1.2 - @rate*1000
-        adapt_every = 7 # days
+        adapt_every = 28 # days
         i = -1
         skipped_first_block = false
         start_date.upto(d) do |date|
             i += 1
-            if i == adapt_every
-                if not skipped_first_block
+            if not skipped_first_block
+                if i == @skip_first
                     skipped_first_block = true
                     i = 0
-                    next
                 end
+                next
+            end
+            if i == adapt_every
                 weight_before = moving_average_at(date-adapt_every)
                 weight_now = moving_average_at(date)
                 loss = weight_before - weight_now
