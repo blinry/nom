@@ -81,7 +81,6 @@ class Nom
         kg_lost = moving_average_at(start_date) - moving_average_at(Date.today)
         kg_to_go = moving_average_at(Date.today) - @goal
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
-        puts
         log_since(Date.today - 1)
     end
 
@@ -294,6 +293,16 @@ HERE
         return (kcal/@unit).round
     end
 
+    def format_date date
+        if date == Date.today
+            return "Today"
+        elsif date == Date.today-1
+            return "Yesterday"
+        else
+            return date.to_s
+        end
+    end
+
     def calculate term
         factors = term.split("x")
         product = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
@@ -309,17 +318,19 @@ HERE
             show = date >= start
             remaining += allowed_kcal(date)
             if show
-                puts date
-                puts "    Available: (#{quantize(remaining)}) of (#{quantize(allowed_kcal(date))})"
+                puts
+                puts "#{format_date(date)}: (#{quantize(remaining)}) of (#{quantize(allowed_kcal(date))})"
+                puts
             end
             @inputs.select{|i| i.date == date }.each do |i|
                 if show
-                    puts "    (#{quantize(i.kcal)}) #{i.description}"
+                    puts "#{" "*(6-quantize(i.kcal).to_s.length)}(#{quantize(i.kcal)}) #{i.description}"
                 end
                 remaining -= i.kcal
             end
             if show
-                puts "    Remaining: (#{quantize(remaining)})"
+                puts "---------------------"
+                puts "#{" "*(6-quantize(remaining).to_s.length)}(#{quantize(remaining)}) remaining"
             end
         end
     end
