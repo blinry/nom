@@ -78,8 +78,7 @@ class Nom
     end
 
     def status
-        kg_lost = moving_average_at(start_date) - moving_average_at(Date.today)
-        kg_to_go = moving_average_at(Date.today) - @goal
+        kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
         log_since(Date.today - 1)
     end
@@ -261,11 +260,10 @@ HERE
     end
 
     def current_weight
-        weight_at(Date.today)
     end
 
     def kg_to_go
-        current_weight - @goal
+        moving_average_at(end_date) - @goal
     end
 
     def kcal_to_burn
@@ -314,7 +312,7 @@ HERE
 
     def log_since start
         remaining = 0
-        start_date.upto(Date.today) do |date|
+        start_date.upto(end_date) do |date|
             show = date >= start
             remaining += allowed_kcal(date)
             if show
