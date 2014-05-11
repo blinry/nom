@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-
 require_relative "nom"
 
 nom = Nom.new
@@ -7,35 +6,49 @@ nom = Nom.new
 cmd = ARGV.shift
 cmd = "status" if cmd.nil?
 
-case cmd
-when "nom", "n"
-    raise "Please specify food and kcal" if ARGV.size < 2
-    kcal = ARGV.pop
-    description = ARGV.join(" ")
-    nom.nom(Date.today, kcal, description)
-    nom.status()
-when "weight", "w"
-    raise "Please specify weight" if ARGV.size != 1
-    weight = ARGV.pop.to_f
-    nom.weight(Date.today, weight)
-when "plot", "p"
-    nom.plot()
-when "log", "l"
-    nom.log()
-when "search", "s"
-    nom.search(ARGV.join(" "))
-when "status"
-    nom.status()
-when "edit", "e"
-    nom.edit()
-when "help"
-    puts "Available subcommands:"
-    puts "   status                       Display a short food log and remaining energy"
-    puts "   nom <description> <energy>   Report that you ate something"
-    puts "   weight <weight>              Report a weight measurement"
-    puts "   plot                         Plot a weight graph"
-    puts "   search <term>                Search for a food item in the web"
-    puts "   help                         Print this help"
-else
-    puts "Unknown subcommand"
-end
+begin
+    done = true
+
+    case cmd
+    when "nom", "n"
+        raise "Please specify food and kcal" if ARGV.size < 2
+        kcal = ARGV.pop
+        description = ARGV.join(" ")
+        nom.nom(Date.today, kcal, description)
+        nom.status()
+    when "weight", "w"
+        raise "Please specify weight" if ARGV.size != 1
+        weight = ARGV.pop.to_f
+        nom.weight(Date.today, weight)
+    when "plot", "p"
+        nom.plot()
+    when "log", "l"
+        nom.log()
+    when "search", "s"
+        nom.search(ARGV.join(" "))
+    when "status"
+        nom.status()
+    when "edit", "e"
+        nom.edit()
+    when "help"
+        puts "Available subcommands:"
+        puts "   status                       Display a short food log and remaining energy"
+        puts "   nom <description> <energy>   Report that you ate something"
+        puts "   weight <weight>              Report a weight measurement"
+        puts "   plot                         Plot a weight graph"
+        puts "   search <term>                Search for a food item in the web"
+        puts "   help                         Print this help"
+    else
+        ARGV.unshift(cmd)
+        if ARGV.last.to_f > 0
+            if ARGV.size > 1
+                cmd = "nom"
+            else
+                cmd = "weight"
+            end
+        else
+            cmd = "search"
+        end
+        done = false
+    end
+end until done
