@@ -72,6 +72,7 @@ class Nom
         file = @config_dir+name
         FileUtils.touch(file)
         IO.readlines(file).each do |line|
+            next if line == "\n"
             result << klass::from_line(line)
         end
         result.sort_by{|e| e.date}
@@ -253,8 +254,13 @@ HERE
 
     def write_inputs
         open(@config_dir+"input", "w") do |f|
+            last_date = @inputs.first.date
             @inputs.each do |e|
+                if last_date < e.date
+                    f << "\n"
+                end
                 f << e.to_s
+                last_date = e.date
             end
         end
     end
