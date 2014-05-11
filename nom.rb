@@ -129,7 +129,7 @@ class Nom
     def plot
         dat = ""
         (start_date).upto(end_date) do |date|
-            dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t#{allowed_kcal(date)}\t#{consumed_at(date)}\n"
+            dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
         end
 
         plt = <<HERE
@@ -143,7 +143,7 @@ set format x "%Y-%m"
 
 set xrange [ "#{start_date}" : "#{Date.today+days_to_go}" ]
 set yrange [ #{(@goal-1).floor} : #{@weights.map{|w| w.weight}.max.ceil} ]
-set y2range [ 0 : 3000 ]
+set y2range [ 0 : #{quantize(allowed_kcal(start_date)*1.5)} ]
 set grid
 
 set ytics 1
