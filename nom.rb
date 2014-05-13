@@ -134,37 +134,41 @@ class Nom
         end
 
         plt = <<HERE
-#set title "Fu"
+set terminal svg size 1440,900 font "Linux Biolinum,20"
+set output "/tmp/nom.svg"
+
+set multiplot layout 2,1
 
 set border 11
 
 set xdata time
 set timefmt "%Y-%m-%d"
 set format x "%Y-%m"
+set grid
+set lmargin 6
 
 set xrange [ "#{start_date}" : "#{Date.today+days_to_go}" ]
-set yrange [ #{(@goal-1).floor} : #{@weights.map{|w| w.weight}.max.ceil} ]
-set y2range [ 0 : #{quantize(allowed_kcal(start_date)*1.5)} ]
-set grid
-
-set ytics 1
-set y2tics 500
-set mxtics 4
-set xtics nomirror
-set ytics nomirror
-
-set terminal svg size 1440,900 font "Linux Biolinum,20"
-set output "/tmp/nom.svg"
+set yrange [ #{@goal} : #{@weights.map{|w| w.weight}.max.ceil} ]
+set ytics 1 nomirror
+set mxtics 1
+set xtics 2592000 nomirror
 
 set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
 plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
 '/tmp/nom.dat' using 1:3 w l t '' lt 1 lw 2 lc rgb "navy", \
-(#{@goal}) w l t 'Goal' lw 2 lt 1, \
-#{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green", \
-'/tmp/nom.dat' using 1:4 w histeps t 'Allowed energy' lt 5 axes x1y2, \
-'/tmp/nom.dat' using 1:5 w histeps t 'Consumed energy' axes x1y2
+#{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green"
+
+unset obj 1
+
+set yrange [ 0 : #{quantize((start_date..end_date).map{|d| consumed_at(d)}.max)} ]
+set ytics 200 nomirror
+
+plot '/tmp/nom.dat' using 1:4 w histeps t 'Allowed energy' lc rgb "black", \
+'/tmp/nom.dat' using 1:5 w histeps t 'Consumed energy'
+
+unset multiplot
 HERE
 
         File.write("/tmp/nom.dat", dat)
