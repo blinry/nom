@@ -79,7 +79,7 @@ class Nom
     end
 
     def status
-        kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
+        kg_lost = moving_average_at(start_date+@skip_first) - moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
         log_since(Date.today - 1)
     end
