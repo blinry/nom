@@ -128,9 +128,14 @@ class Nom
     end
 
     def plot
-        dat = ""
+        weight_dat = ""
+        input_dat = ""
         (start_date).upto(end_date) do |date|
-            dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
+            weight_dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t\n"
+        end
+
+        (start_date).upto(Date.today) do |date|
+            input_dat << "#{date}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
         end
 
         plt = <<HERE
@@ -156,8 +161,8 @@ set xtics 2592000 nomirror
 set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
-plot '/tmp/nom.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
-'/tmp/nom.dat' using 1:3 w l t '' lt 1 lw 2 lc rgb "navy", \
+plot '/tmp/nom-weight.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
+'/tmp/nom-weight.dat' using 1:3 w l t '' lt 1 lw 2 lc rgb "navy", \
 #{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green"
 
 unset obj 1
@@ -165,13 +170,14 @@ unset obj 1
 set yrange [ 0 : #{quantize((start_date..end_date).map{|d| consumed_at(d)}.max)} ]
 set ytics 200 nomirror
 
-plot '/tmp/nom.dat' using 1:4 w histeps t 'Allowed energy' lc rgb "black", \
-'/tmp/nom.dat' using 1:5 w histeps t 'Consumed energy'
+plot '/tmp/nom-input.dat' using 1:2 w histeps t 'Allowed energy' lc rgb "black", \
+'/tmp/nom-input.dat' using 1:3 w histeps t 'Consumed energy'
 
 unset multiplot
 HERE
 
-        File.write("/tmp/nom.dat", dat)
+        File.write("/tmp/nom-weight.dat", weight_dat)
+        File.write("/tmp/nom-input.dat", input_dat)
         File.write("/tmp/nom.plt", plt)
         system("gnuplot /tmp/nom.plt")
         system("eog -f /tmp/nom.svg")
@@ -322,7 +328,7 @@ HERE
 
     def log_since start
         remaining = 0
-        start_date.upto(end_date) do |date|
+        start_date.upto(Date.today) do |date|
             show = date >= start
             remaining += allowed_kcal(date)
             if show
