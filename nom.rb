@@ -88,6 +88,16 @@ class Nom
         log_since(start_date)
     end
 
+    def grep term
+        inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}
+
+        inputs.each do |i|
+            entry(quantize(i.kcal), i.description)
+        end
+        puts "---------------------"
+        entry(inputs.reduce(0){|sum, i| sum+i.kcal}, "sum")
+    end
+
     def weight date, weight
         @weights << WeightEntry.new(date, weight)
         write_weights
@@ -101,6 +111,8 @@ class Nom
     end
 
     def search term
+        grep(term)
+        puts
         term = term.encode("ISO-8859-1")
         url = "http://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{URI.escape(term)}"
 
@@ -317,6 +329,10 @@ HERE
         end
     end
 
+    def entry value, text=""
+        puts "#{" "*(6-value.to_s.length)}(#{value}) #{text}"
+    end
+
     def calculate term
         factors = term.split("x")
         product = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
@@ -338,13 +354,13 @@ HERE
             end
             @inputs.select{|i| i.date == date }.each do |i|
                 if show
-                    puts "#{" "*(6-quantize(i.kcal).to_s.length)}(#{quantize(i.kcal)}) #{i.description}"
+                    entry(quantize(i.kcal), i.description)
                 end
                 remaining -= i.kcal
             end
             if show
                 puts "---------------------"
-                puts "#{" "*(6-quantize(remaining).to_s.length)}(#{quantize(remaining)}) remaining"
+                entry(quantize(remaining), "remaining")
             end
         end
     end

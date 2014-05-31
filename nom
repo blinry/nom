@@ -24,6 +24,8 @@ begin
         nom.plot()
     when "log", "l"
         nom.log()
+    when "grep", "g"
+        nom.grep(ARGV.join(" "))
     when "search", "s"
         nom.search(ARGV.join(" "))
     when "status"
