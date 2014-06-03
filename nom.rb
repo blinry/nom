@@ -143,7 +143,7 @@ class Nom
         weight_dat = ""
         input_dat = ""
         (start_date).upto(end_date) do |date|
-            weight_dat << "#{date}\t#{weight_at(date)}\t#{moving_average_at(date)}\t\n"
+            weight_dat << "#{date}\t#{weight_interpolated_at(date) ? "-1000" : weight_at(date)}\t#{moving_average_at(date)}\t\n"
         end
 
         (start_date).upto(Date.today) do |date|
@@ -247,6 +247,10 @@ HERE
         else
             w.first.weight
         end
+    end
+
+    def weight_interpolated_at date
+        @weights.select{|w| w.date == date }.empty?
     end
 
     def consumed_at date
