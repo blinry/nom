@@ -50,36 +50,19 @@ end
 
 class Nom
     def initialize
-        @weights = []
-        @inputs = []
+        @nom_dir = Dir.home+"/.nom/"
 
-        @config_dir = Dir.home+"/.nom/"
-
-        config = YAML.load_file(@config_dir+"config")
-        @height = config["height"].to_f
-        @goal = config["goal"].to_f
-        @rate = config["rate"].to_f
-        @unit = config["unit"].to_f
-        @skip_first = 7
+        if not Dir.exists? @nom_dir
+            puts "Creating #{@nom_dir}"
+            Dir.mkdir(@nom_dir)
+        end
 
         @weights = read_file("weight", WeightEntry)
         @inputs = read_file("input", FoodEntry)
-
-    end
-
-    def read_file name, klass
-        result = []
-        file = @config_dir+name
-        FileUtils.touch(file)
-        IO.readlines(file).each do |line|
-            next if line == "\n"
-            result << klass::from_line(line)
-        end
-        result.sort_by{|e| e.date}
     end
 
     def status
-        kg_lost = moving_average_at(start_date+@skip_first) - moving_average_at(end_date)
+        kg_lost = moving_average_at(start_date+skip_first) - moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
         log_since(Date.today - 1)
     end
@@ -165,7 +148,7 @@ set grid
 set lmargin 6
 
 set xrange [ "#{start_date}" : "#{Date.today+days_to_go}" ]
-set yrange [ #{@goal} : #{@weights.map{|w| w.weight}.max.ceil} ]
+set yrange [ #{goal} : #{@weights.map{|w| w.weight}.max.ceil} ]
 set ytics 1 nomirror
 set mxtics 1
 set xtics 2592000 nomirror
@@ -175,7 +158,7 @@ set obj 1 fillstyle solid 1.0 fillcolor rgb "white"
 
 plot '/tmp/nom-weight.dat' using 1:2 w points t 'Weight' pt 13 ps 0.3 lc rgb "navy", \
 '/tmp/nom-weight.dat' using 1:3 w l t '' lt 1 lw 2 lc rgb "navy", \
-#{moving_average_at(start_date+@skip_first)}-#{@rate}*(x/60/60/24/7-#{(start_date+@skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(@rate).round(1)} kg/week' lc rgb "forest-green"
+#{moving_average_at(start_date+skip_first)}-#{rate}*(x/60/60/24/7-#{(start_date+skip_first-Date.parse("2000-01-01"))/7.0}) t '#{(rate).round(1)} kg/week' lc rgb "forest-green"
 
 unset obj 1
 
@@ -204,14 +187,14 @@ HERE
     private
 
     def allowed_kcal d
-        allowed = @weights.first.weight*25*1.2 - @rate*1000
+        allowed = @weights.first.weight*25*1.2 - rate*1000
         adapt_every = 28 # days
         i = -1
         skipped_first_block = false
         start_date.upto(d) do |date|
             i += 1
             if not skipped_first_block
-                if i == @skip_first
+                if i == skip_first
                     skipped_first_block = true
                     i = 0
                 end
@@ -227,7 +210,7 @@ HERE
                 end
                 kcal_per_kg_body_fat = 7000
                 burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
-                wanted_to_burn_per_day = @rate*1000
+                wanted_to_burn_per_day = rate*1000
                 burned_too_little = wanted_to_burn_per_day - burned_kcal_per_day
                 intake_per_day = intake/adapt_every
                 allowed = intake_per_day - burned_too_little
@@ -261,7 +244,7 @@ HERE
         alpha = 0.1
         beta = 0.1
         average = weight_at(start_date)
-        trend = -@rate/7.0
+        trend = -rate/7.0
         (start_date+1).upto(date) do |d|
             last_average = average
             average = alpha*weight_at(d) + (1-alpha)*(average+trend)
@@ -271,7 +254,7 @@ HERE
     end
 
     def write_weights
-        open(@config_dir+"weight", "w") do |f|
+        open(@nom_dir+"weight", "w") do |f|
             @weights.each do |e|
                 f << e.to_s
             end
@@ -279,7 +262,7 @@ HERE
     end
 
     def write_inputs
-        open(@config_dir+"input", "w") do |f|
+        open(@nom_dir+"input", "w") do |f|
             last_date = @inputs.first.date
             @inputs.each do |e|
                 if last_date < e.date
@@ -295,7 +278,7 @@ HERE
     end
 
     def kg_to_go
-        moving_average_at(end_date) - @goal
+        moving_average_at(end_date) - goal
     end
 
     def kcal_to_burn
@@ -304,7 +287,7 @@ HERE
     end
 
     def days_to_go
-        kcal_to_burn/(@rate*1000)
+        kcal_to_burn/(rate*1000)
     end
 
     def start_date
@@ -320,7 +303,7 @@ HERE
     end
 
     def quantize kcal
-        return (kcal/@unit).round
+        return (kcal/get_config("unit", 1)).round
     end
 
     def format_date date
@@ -367,5 +350,50 @@ HERE
                 entry(quantize(remaining), "remaining")
             end
         end
+    end
+
+    def read_file name, klass
+        result = []
+        file = @nom_dir+name
+        FileUtils.touch(file)
+        IO.readlines(file).each do |line|
+            next if line == "\n"
+            result << klass::from_line(line)
+        end
+        result.sort_by{|e| e.date}
+    end
+
+    def goal
+        get_config("goal")
+    end
+
+    def rate
+        get_config("rate")
+    end
+
+    def skip_first
+        return 7
+    end
+
+    def get_config name, default=nil
+        config = {}
+
+        if File.exists? @nom_dir+"config"
+            config = YAML.load_file(@nom_dir+"config")
+        end
+
+        if not config[name]
+            if default
+                return default
+            else
+                print "Please enter a value for '#{name}': "
+                config[name] = gets.to_f
+                open(@nom_dir+"config", "w") do |f|
+                    f << config.to_yaml
+                end
+            end
+        end
+
+        return config[name].to_f
     end
 end
