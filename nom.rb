@@ -237,7 +237,7 @@ HERE
     end
 
     def consumed_at date
-        @inputs.select{|i| i.date == date }.inject(0){ |sum, i| sum+i.kcal }
+        inputs_at(date).inject(0){ |sum, i| sum+i.kcal }
     end
 
     def moving_average_at date
@@ -339,7 +339,7 @@ HERE
                 puts "#{format_date(date)}: (#{quantize(remaining)}) of (#{quantize(allowed_kcal(date))})"
                 puts
             end
-            @inputs.select{|i| i.date == date }.each do |i|
+            inputs_at(date).each do |i|
                 if show
                     entry(quantize(i.kcal), i.description)
                 end
@@ -395,5 +395,9 @@ HERE
         end
 
         return config[name].to_f
+    end
+
+    def inputs_at date
+        @inputs.select{|i| i.date == date }
     end
 end
