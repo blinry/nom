@@ -1,58 +1,51 @@
 #!/usr/bin/env ruby
 require_relative "nom"
 
+commands = [
+    [ "status", nil, nil, "Display a short food log and remaining energy" ],
+    [ "nom", "n", "<description> <energy>", "Report that you ate something" ],
+    [ "weight", "w", "<weight>", "Report a weight measurement" ],
+    [ "search", "s", "<term>", "Search for a food item in the web" ],
+    [ "plot", "p", nil, "Plot a weight graph" ],
+    [ "log", "l", nil, "Show all inputs" ],
+    [ "grep", "g", "<term>", "" ],
+    [ "edit", "e", nil, "" ],
+    [ "editw", "ew", nil, "" ],
+    [ "help", nil, nil, "Print this help" ],
+]
+
 nom = Nom.new
 
-cmd = ARGV.shift
-cmd = "status" if cmd.nil?
+cmd_name = ARGV.shift or "status"
+command = commands.find{|c| c[0] == cmd_name or c[1] == cmd_name}
 
-begin
-    done = true
-
-    case cmd
-    when "nom", "n"
-        raise "Please specify food and kcal" if ARGV.size < 2
-        kcal = ARGV.pop
-        description = ARGV.join(" ")
-        nom.nom(Date.today, kcal, description)
-        nom.status()
-    when "weight", "w"
-        raise "Please specify weight" if ARGV.size != 1
-        weight = ARGV.pop.to_f
-        nom.weight(Date.today, weight)
-    when "plot", "p"
-        nom.plot()
-    when "log", "l"
-        nom.log()
-    when "grep", "g"
-        nom.grep(ARGV.join(" "))
-    when "search", "s"
-        nom.search(ARGV.join(" "))
-    when "status"
-        nom.status()
-    when "edit", "e"
-        nom.edit()
-    when "editw", "ew"
-        nom.editw()
-    when "help"
-        puts "Available subcommands:"
-        puts "   status                       Display a short food log and remaining energy"
-        puts "   nom <description> <energy>   Report that you ate something"
-        puts "   weight <weight>              Report a weight measurement"
-        puts "   plot                         Plot a weight graph"
-        puts "   search <term>                Search for a food item in the web"
-        puts "   help                         Print this help"
-    else
-        ARGV.unshift(cmd)
-        if ARGV.last.to_f != 0
-            if ARGV.size > 1
-                cmd = "nom"
-            else
-                cmd = "weight"
-            end
+if command.nil?
+    ARGV.unshift(cmd_name)
+    if ARGV.last.to_f != 0
+        if ARGV.size > 1
+            command = commands.find{|c| c[0] == "nom"}
         else
-            cmd = "search"
+            command = commands.find{|c| c[0] == "weight"}
         end
-        done = false
+    else
+        command = commands.find{|c| c[0] == "search"}
     end
-end until done
+end
+
+if command[0] == "help"
+    puts "Available subcommands:"
+    commands.each do |c|
+        puts "  "+"#{c[0]} #{c[2]}".ljust(28)+c[3]
+    end
+else
+    begin
+        if ARGV.empty?
+            nom.send(command[0])
+        else
+            nom.send(command[0], ARGV)
+        end
+    rescue Exception => e
+        puts e.message
+        puts "Usage: nom #{command[0]} #{command[2]}"
+    end
+end

@@ -71,7 +71,8 @@ class Nom
         log_since(start_date)
     end
 
-    def grep term
+    def grep args
+        term = args.join(" ")
         inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}
 
         inputs.each do |i|
@@ -81,20 +82,23 @@ class Nom
         entry(inputs.reduce(0){|sum, i| sum+i.kcal}, "sum")
     end
 
-    def weight date, weight
-        @weights << WeightEntry.new(date, weight)
+    def weight args
+        weight = args.pop.to_f
+        @weights << WeightEntry.new(Date.today, weight)
         write_weights
         plot
     end
 
-    def nom date, kcal, description
-        kcal = calculate(kcal)
-        @inputs << FoodEntry.new(date, kcal, description)
+    def nom args
+        kcal = calculate(args.pop)
+        description = args.join(" ")
+        @inputs << FoodEntry.new(Date.today, kcal, description)
         write_inputs
     end
 
-    def search term
-        grep(term)
+    def search args
+        grep(args)
+        term = args.join(" ")
         puts
         term = term.encode("ISO-8859-1")
         url = "http://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{URI.escape(term)}"
@@ -330,7 +334,7 @@ HERE
         factors = term.split("x")
         product = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
         if product == 0
-            raise "kcal term cannot be zero"
+            raise "energy term cannot be zero"
         end
         return product
     end
