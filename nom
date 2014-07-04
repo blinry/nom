@@ -32,6 +32,8 @@ begin
         nom.status()
     when "edit", "e"
         nom.edit()
+    when "editw", "ew"
+        nom.editw()
     when "help"
         puts "Available subcommands:"
         puts "   status                       Display a short food log and remaining energy"

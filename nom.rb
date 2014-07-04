@@ -184,6 +184,12 @@ HERE
         system("#{editor} #{ENV["HOME"]}/.nom/input")
     end
 
+    def editw
+        editor = ENV["EDITOR"]
+        editor = "vim" if editor.nil?
+        system("#{editor} #{ENV["HOME"]}/.nom/weight")
+    end
+
     private
 
     def allowed_kcal d
