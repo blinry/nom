@@ -37,6 +37,10 @@ if command[0] == "help"
     commands.each do |c|
         puts "  "+"#{c[0]} #{c[2]}".ljust(28)+c[3]
     end
+    puts "There are some useful defaults:"
+    puts "  "+"<number>".ljust(28)+"weight <number>"
+    puts "  "+"<term>".ljust(28)+"search <term>"
+    puts "  "+"<term> <number>".ljust(28)+"nom <term> <number>"
 else
     begin
         if ARGV.empty?
