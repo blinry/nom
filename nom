@@ -86,15 +86,36 @@ class Nom
     def weight args
         weight = args.pop.to_f
         @weights << WeightEntry.new(Date.today, weight)
-        write_weights
+
+        open(@nom_dir+"weight", "w") do |f|
+            @weights.each do |e|
+                f << e.to_s
+            end
+        end
+
         plot
     end
 
     def nom args
-        kcal = calculate(args.pop)
+        factors = args.pop.split("x")
+        kcal = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
+        if kcal == 0
+            raise "energy term cannot be zero"
+        end
+
         description = args.join(" ")
         @inputs << FoodEntry.new(Date.today, kcal, description)
-        write_inputs
+
+        open(@nom_dir+"input", "w") do |f|
+            last_date = @inputs.first.date
+            @inputs.each do |e|
+                if last_date < e.date
+                    f << "\n"
+                end
+                f << e.to_s
+                last_date = e.date
+            end
+        end
     end
 
     def search args
@@ -131,7 +152,7 @@ class Nom
         weight_dat = ""
         input_dat = ""
         (start_date).upto(end_date) do |date|
-            weight_dat << "#{date}\t#{weight_interpolated_at(date) ? "-1000" : weight_at(date)}\t#{moving_average_at(date)}\t\n"
+            weight_dat << "#{date}\t#{@weights.select{|w| w.date == date }.empty? ? "-1000" : weight_at(date)}\t#{moving_average_at(date)}\t\n"
         end
 
         (start_date).upto(Date.today) do |date|
@@ -243,10 +264,6 @@ HERE
         end
     end
 
-    def weight_interpolated_at date
-        @weights.select{|w| w.date == date }.empty?
-    end
-
     def consumed_at date
         inputs_at(date).inject(0){ |sum, i| sum+i.kcal }
     end
@@ -262,30 +279,6 @@ HERE
             trend = beta*(average-last_average) + (1-beta)*trend
         end
         average
-    end
-
-    def write_weights
-        open(@nom_dir+"weight", "w") do |f|
-            @weights.each do |e|
-                f << e.to_s
-            end
-        end
-    end
-
-    def write_inputs
-        open(@nom_dir+"input", "w") do |f|
-            last_date = @inputs.first.date
-            @inputs.each do |e|
-                if last_date < e.date
-                    f << "\n"
-                end
-                f << e.to_s
-                last_date = e.date
-            end
-        end
-    end
-
-    def current_weight
     end
 
     def kg_to_go
@@ -309,10 +302,6 @@ HERE
         @weights.last.date
     end
 
-    def goal_date
-        Date.today + days_to_go
-    end
-
     def quantize kcal
         return (kcal/get_config("unit", 1)).round
     end
@@ -329,15 +318,6 @@ HERE
 
     def entry value, text=""
         puts "#{" "*(6-value.to_s.length)}(#{value}) #{text}"
-    end
-
-    def calculate term
-        factors = term.split("x")
-        product = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
-        if product == 0
-            raise "energy term cannot be zero"
-        end
-        return product
     end
 
     def log_since start
@@ -383,7 +363,7 @@ HERE
     end
 
     def skip_first
-        return 7
+        7
     end
 
     def get_config name, default=nil
