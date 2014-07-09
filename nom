@@ -402,9 +402,9 @@ commands = [
     [ "search", "s", "<term>", "Search for a food item in the web" ],
     [ "plot", "p", nil, "Plot a weight graph" ],
     [ "log", "l", nil, "Show all inputs" ],
-    [ "grep", "g", "<term>", "" ],
-    [ "edit", "e", nil, "" ],
-    [ "editw", "ew", nil, "" ],
+    [ "grep", "g", "<term>", "Search in previous inputs" ],
+    [ "edit", "e", nil, "Edit the input file" ],
+    [ "editw", "ew", nil, "Edit the weight file" ],
     [ "help", nil, nil, "Print this help" ],
 ]
 
@@ -432,7 +432,7 @@ if command[0] == "help"
         puts "  "+"#{c[1].to_s.rjust(2)}#{c[1] ? "," : " "} #{c[0]} #{c[2]}".ljust(32)+c[3]
     end
     puts "There are some useful defaults:"
-    puts "      "+"(nothing)".ljust(28)+"status"
+    puts "      "+"(no arguments)".ljust(28)+"status"
     puts "      "+"<number>".ljust(28)+"weight <number>"
     puts "      "+"<term>".ljust(28)+"search <term>"
     puts "      "+"<term> <number>".ljust(28)+"nom <term> <number>"
