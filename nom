@@ -116,6 +116,8 @@ class Nom
                 last_date = e.date
             end
         end
+
+        status
     end
 
     def search args
@@ -427,12 +429,13 @@ end
 if command[0] == "help"
     puts "Available subcommands:"
     commands.each do |c|
-        puts "  "+"#{c[0]} #{c[2]}".ljust(28)+c[3]
+        puts "  "+"#{c[1].to_s.rjust(2)}#{c[1] ? "," : " "} #{c[0]} #{c[2]}".ljust(32)+c[3]
     end
     puts "There are some useful defaults:"
-    puts "  "+"<number>".ljust(28)+"weight <number>"
-    puts "  "+"<term>".ljust(28)+"search <term>"
-    puts "  "+"<term> <number>".ljust(28)+"nom <term> <number>"
+    puts "      "+"(nothing)".ljust(28)+"status"
+    puts "      "+"<number>".ljust(28)+"weight <number>"
+    puts "      "+"<term>".ljust(28)+"search <term>"
+    puts "      "+"<term> <number>".ljust(28)+"nom <term> <number>"
 else
     begin
         if ARGV.empty?
