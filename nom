@@ -61,6 +61,12 @@ class Nom
         @weights = read_file("weight", WeightEntry)
         @inputs = read_file("input", FoodEntry)
 
+        @inputs_at = {}
+        @inputs.each do |i|
+            @inputs_at[i.date] = [] if @inputs_at[i.date].nil?
+            @inputs_at[i.date] << i
+        end
+
         if @weights.empty?
             print "Please enter your current weight: "
             weight [gets.chomp]
@@ -364,7 +370,7 @@ HERE
             next if line == "\n"
             result << klass::from_line(line)
         end
-        result.sort_by{|e| e.date}
+        result
     end
 
     def goal
@@ -402,7 +408,7 @@ HERE
     end
 
     def inputs_at date
-        @inputs.select{|i| i.date == date }
+        @inputs_at[date] || []
     end
 end
 
