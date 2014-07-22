@@ -71,6 +71,31 @@ class Nom
             print "Please enter your current weight: "
             weight [gets.chomp]
         end
+
+        alpha = 0.1
+        beta = 0.1
+        trend = -rate/7.0
+        @moving_average_at = {start_date => weight_at(start_date)}
+        (start_date+1).upto(end_date) do |d|
+            @moving_average_at[d] = alpha*weight_at(d) + (1-alpha)*(@moving_average_at[d-1]+trend)
+            trend = beta*(@moving_average_at[d]-@moving_average_at[d-1]) + (1-beta)*trend
+        end
+
+        @allowed_at = {start_date => @weights.first.weight*25*1.2 - rate*1000}
+        alpha = 0.1
+        (start_date+1).upto(end_date) do |d|
+            intake = consumed_at(d)
+            loss = moving_average_at(d-1) - moving_average_at(d)
+            kcal_per_kg_body_fat = 7000
+            burned_kcal = loss*kcal_per_kg_body_fat
+            wanted_to_burn = rate*1000
+            burned_too_little = wanted_to_burn - burned_kcal
+            new_estimation = intake - burned_too_little
+            @allowed_at[d] = alpha*new_estimation + (1-alpha)*@allowed_at[d-1]
+        end
+        (end_date+1).upto(Date.today) do |d|
+            @allowed_at[d] = @allowed_at[d-1]
+        end
     end
 
     def status
@@ -235,38 +260,8 @@ HERE
 
     private
 
-    def allowed_kcal d
-        allowed = @weights.first.weight*25*1.2 - rate*1000
-        adapt_every = 28 # days
-        i = -1
-        skipped_first_block = false
-        start_date.upto(d) do |date|
-            i += 1
-            if not skipped_first_block
-                if i == skip_first
-                    skipped_first_block = true
-                    i = 0
-                end
-                next
-            end
-            if i == adapt_every
-                weight_before = moving_average_at(date-adapt_every)
-                weight_now = moving_average_at(date)
-                loss = weight_before - weight_now
-                intake = 0
-                (date-adapt_every).upto(date-1) do |d|
-                    intake += consumed_at(d)
-                end
-                kcal_per_kg_body_fat = 7000
-                burned_kcal_per_day = loss*kcal_per_kg_body_fat/adapt_every
-                wanted_to_burn_per_day = rate*1000
-                burned_too_little = wanted_to_burn_per_day - burned_kcal_per_day
-                intake_per_day = intake/adapt_every
-                allowed = intake_per_day - burned_too_little
-                i = 0
-            end
-        end
-        allowed
+    def allowed_kcal date
+        return @allowed_at[date]
     end
 
     def weight_at date
@@ -286,16 +281,7 @@ HERE
     end
 
     def moving_average_at date
-        alpha = 0.1
-        beta = 0.1
-        average = weight_at(start_date)
-        trend = -rate/7.0
-        (start_date+1).upto(date) do |d|
-            last_average = average
-            average = alpha*weight_at(d) + (1-alpha)*(average+trend)
-            trend = beta*(average-last_average) + (1-beta)*trend
-        end
-        average
+        @moving_average_at[date]
     end
 
     def kg_to_go
