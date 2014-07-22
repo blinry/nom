@@ -117,7 +117,9 @@ class Nom
         end
 
         description = args.join(" ")
-        @inputs << FoodEntry.new(Date.today, kcal, description)
+        entry = FoodEntry.new(Date.today, kcal, description)
+        @inputs << entry
+        @inputs_at[Date.today] << entry
 
         open(@nom_dir+"input", "w") do |f|
             last_date = @inputs.first.date
