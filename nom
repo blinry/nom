@@ -329,24 +329,18 @@ HERE
 
     def log_since start
         remaining = 0
-        start_date.upto(Date.today) do |date|
-            show = date >= start
+        start.upto(Date.today) do |date|
             remaining += allowed_kcal(date)
-            if show
-                puts
-                puts "#{format_date(date)}: (#{quantize(remaining)}) of (#{quantize(allowed_kcal(date))})"
-                puts
-            end
+            puts
+            puts "#{format_date(date)}: (#{quantize(allowed_kcal(date))})"
+            puts
+            remaining = allowed_kcal(date)
             inputs_at(date).each do |i|
-                if show
-                    entry(quantize(i.kcal), i.description)
-                end
+                entry(quantize(i.kcal), i.description)
                 remaining -= i.kcal
             end
-            if show
-                puts "---------------------"
-                entry(quantize(remaining), "remaining")
-            end
+            puts "---------------------"
+            entry(quantize(remaining), "remaining")
         end
     end
 
