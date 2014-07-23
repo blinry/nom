@@ -113,13 +113,15 @@ class Nom
 
     def grep args
         term = args.join(" ")
-        inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}
+        inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}.uniq{|i| [i.kcal, i.description]}
+
+        if inputs.empty?
+            puts "(no matching entries found)"
+        end
 
         inputs.each do |i|
             entry(quantize(i.kcal), i.description)
         end
-        puts "---------------------"
-        entry(inputs.reduce(0){|sum, i| sum+i.kcal}, "sum")
     end
 
     def weight args
@@ -165,6 +167,7 @@ class Nom
     end
 
     def search args
+        puts "Previous log entries:"
         grep(args)
         term = args.join(" ")
         puts
@@ -184,12 +187,7 @@ class Nom
                 size = serving.css("a.servb").text
                 kcal = serving.css("div")[5].css("div")[1].text.to_i
                 #kj = serving.css("div")[2].css("div")[1].text.to_i
-                points = quantize(kcal)
-
-                #next if size =~ /100 g/
-
-                #puts "    (#{points})#{points>9 ? "" : " "} #{size}"
-                puts "    (#{points}) #{size}"
+                puts "    (#{quantize(kcal)}) #{size}"
             end
         end
     end
@@ -216,18 +214,20 @@ class Nom
     end
 
     def edit
-        editor = ENV["EDITOR"]
-        editor = "vim" if editor.nil?
-        system("#{editor} #{ENV["HOME"]}/.nom/input")
+        edit_file "input"
     end
 
     def editw
-        editor = ENV["EDITOR"]
-        editor = "vim" if editor.nil?
-        system("#{editor} #{ENV["HOME"]}/.nom/weight")
+        edit_file "weight"
     end
 
     private
+
+    def edit_file filename
+        editor = ENV["EDITOR"]
+        editor = "vim" if editor.nil?
+        system("#{editor} #{ENV["HOME"]}/.nom/#{filename}")
+    end
 
     def allowed_kcal date
         return @allowed_at[date]
@@ -364,13 +364,13 @@ class Nom
 end
 
 commands = [
-    [ "status", nil, nil, "Display a short food log and remaining energy" ],
-    [ "nom", "n", "<description> <energy>", "Report that you ate something" ],
+    [ "status", nil, nil, "Display a short food log" ],
     [ "weight", "w", "<weight>", "Report a weight measurement" ],
     [ "search", "s", "<term>", "Search for a food item in the web" ],
-    [ "plot", "p", nil, "Plot a weight graph" ],
-    [ "log", "l", nil, "Show all inputs" ],
-    [ "grep", "g", "<term>", "Search in previous inputs" ],
+    [ "nom", "n", "<description> <energy>", "Report that you ate something" ],
+    [ "plot", "p", nil, "Plot a weight/intake graph" ],
+    [ "log", "l", nil, "Display the full food log" ],
+    [ "grep", "g", "<term>", "Search in the food log" ],
     [ "edit", "e", nil, "Edit the input file" ],
     [ "editw", "ew", nil, "Edit the weight file" ],
     [ "help", nil, nil, "Print this help" ],
