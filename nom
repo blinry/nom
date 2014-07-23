@@ -84,7 +84,7 @@ class Nom
         @allowed_at = {start_date => @weights.first.weight*25*1.2 - rate*1000}
         alpha = 0.1
         (start_date+1).upto(end_date) do |d|
-            intake = consumed_at(d)
+            intake = consumed_at(d-1)
             loss = moving_average_at(d-1) - moving_average_at(d)
             kcal_per_kg_body_fat = 7000
             burned_kcal = loss*kcal_per_kg_body_fat
