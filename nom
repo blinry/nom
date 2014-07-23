@@ -144,6 +144,9 @@ class Nom
         description = args.join(" ")
         entry = FoodEntry.new(Date.today, kcal, description)
         @inputs << entry
+        if @inputs_at[Date.today].nil?
+            @inputs_at[Date.today] = []
+        end
         @inputs_at[Date.today] << entry
 
         open(@nom_dir+"input", "w") do |f|
