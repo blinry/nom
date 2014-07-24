@@ -134,6 +134,7 @@ class Nom
             end
         end
 
+        initialize
         plot
     end
 
