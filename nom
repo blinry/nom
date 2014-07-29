@@ -113,15 +113,19 @@ class Nom
 
     def grep args
         term = args.join(" ")
-        inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}.uniq{|i| [i.kcal, i.description]}
+
+        inputs = @inputs.select{|i| i.description =~ Regexp.new(term, Regexp::IGNORECASE)}
 
         if inputs.empty?
             puts "(no matching entries found)"
         end
 
         inputs.each do |i|
-            entry(quantize(i.kcal), i.description)
+            entry(quantize(i.kcal), i.date.to_s+" "+i.description)
         end
+
+        separator
+        entry(quantize(inputs.inject(0){|sum, i| sum+i.kcal}), "total")
     end
 
     def weight args
@@ -297,6 +301,10 @@ class Nom
         puts "#{" "*(6-value.to_s.length)}(#{value}) #{text}"
     end
 
+    def separator
+        puts "---------------------"
+    end
+
     def log_since start
         remaining = 0
         start.upto(Date.today) do |date|
@@ -309,7 +317,7 @@ class Nom
                 entry(quantize(i.kcal), i.description)
                 remaining -= i.kcal
             end
-            puts "---------------------"
+            separator
             entry(quantize(remaining), "remaining")
         end
     end
