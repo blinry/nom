@@ -1,12 +1,15 @@
 #!/usr/bin/env ruby
 require "rubygems"
 require "nokogiri"
+require "os"
 require "uri"
 require "open-uri"
 require "date"
 require "yaml"
 require "fileutils"
+require "tempfile"
 require "erb"
+require "mkmf"
 
 class WeightEntry
     attr_reader :date, :weight
@@ -52,7 +55,7 @@ end
 
 class Nom
     def initialize
-        @nom_dir = Dir.home+"/.nom/"
+        @nom_dir = File.join(Dir.home,".nom")
 
         if not Dir.exists? @nom_dir
             puts "Creating #{@nom_dir}"
@@ -132,7 +135,7 @@ class Nom
         weight = args.pop.to_f
         @weights << WeightEntry.new(Date.today, weight)
 
-        open(@nom_dir+"weight", "w") do |f|
+        open(File.join(@nom_dir,"weight"), "w") do |f|
             @weights.each do |e|
                 f << e.to_s
             end
@@ -157,7 +160,7 @@ class Nom
         end
         @inputs_at[Date.today] << entry
 
-        open(@nom_dir+"input", "w") do |f|
+        open(File.join(@nom_dir,"input"), "w") do |f|
             last_date = @inputs.first.date
             @inputs.each do |e|
                 if last_date < e.date
@@ -198,24 +201,31 @@ class Nom
     end
 
     def plot
-        weight_dat = ""
-        input_dat = ""
+        weight_dat = Tempfile.new("weight")
         (start_date).upto(end_date) do |date|
             weight_dat << "#{date}\t#{@weights.select{|w| w.date == date }.empty? ? "-1000" : weight_at(date)}\t#{moving_average_at(date)}\t\n"
         end
+        weight_dat.close
 
+        input_dat = Tempfile.new("input")
         (start_date).upto(Date.today) do |date|
             input_dat << "#{date}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
         end
+        input_dat.close
+
+        svg = Tempfile.new(["plot", ".svg"])
+        svg.close
 
         plt_erb = IO.read(File.join(File.dirname(__FILE__), "nom.plt.erb"))
-        plt = ERB.new(plt_erb).result(binding)
 
-        File.write("/tmp/nom-weight.dat", weight_dat)
-        File.write("/tmp/nom-input.dat", input_dat)
-        File.write("/tmp/nom.plt", plt)
-        system("gnuplot /tmp/nom.plt")
-        system("eog -f /tmp/nom.svg")
+        plt = Tempfile.new("plt")
+        plt << ERB.new(plt_erb).result(binding)
+        plt.close
+
+        system("gnuplot "+plt.path)
+
+        image_viewer = get_config("image_viewer", "Image viewer/browser")
+        system(image_viewer+" "+svg.path)
     end
 
     def edit
@@ -284,7 +294,7 @@ class Nom
     end
 
     def quantize kcal
-        return (kcal/get_config("unit", "kcal per energy unit", 1)).round
+        return (kcal/get_config("unit", "kcal per energy unit", 1).to_f).round
     end
 
     def format_date date
@@ -324,7 +334,7 @@ class Nom
 
     def read_file name, klass
         result = []
-        file = @nom_dir+name
+        file = File.join(@nom_dir,name)
         FileUtils.touch(file)
         IO.readlines(file).each do |line|
             next if line == "\n"
@@ -334,11 +344,11 @@ class Nom
     end
 
     def goal
-        get_config("goal", "Goal weight")
+        get_config("goal", "Goal weight").to_f
     end
 
     def rate
-        get_config("rate", "Weight loss per week")
+        get_config("rate", "Weight loss per week").to_f
     end
 
     def skip_first
@@ -348,8 +358,8 @@ class Nom
     def get_config name, description, default=nil
         config = {}
 
-        if File.exists? @nom_dir+"config"
-            config = YAML.load_file(@nom_dir+"config")
+        if File.exists? File.join(@nom_dir,"config")
+            config = YAML.load_file(File.join(@nom_dir,"config"))
         end
 
         if not config[name]
@@ -357,14 +367,14 @@ class Nom
                 return default
             else
                 print "Please enter a value for '#{description}': "
-                config[name] = gets.to_f
-                open(@nom_dir+"config", "w") do |f|
+                config[name] = gets
+                open(File.join(@nom_dir,"config"), "w") do |f|
                     f << config.to_yaml
                 end
             end
         end
 
-        return config[name].to_f
+        return config[name]
     end
 
     def inputs_at date
