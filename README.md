@@ -83,9 +83,11 @@ Enter your weight regularly:
 
     $ nom 78.2
 
-And get nice graphs:
+And get nice graphs. The upper graph shows weight over time, with a weighted (no pun intended) moving average and a green target line. The lower graph shows daily energy intake targets and actual intake:
 
     $ nom plot
+    
+![Graphs of weight and input over time](http://files.morr.cc/nom-plot.svg)
 
 ## License: GPLv2+
 
