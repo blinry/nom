@@ -26,7 +26,7 @@ plot "<%= weight_dat.path %>" using 1:2 w points t "Weight" pt 13 ps 0.3 lc rgb 
 
 unset obj 1
 
-set yrange [ 0 : <%= quantize((start_date..end_date).map{|d| consumed_at(d)}.max) %> ]
+set yrange [ 0 : <%= quantize([(start_date..end_date).map{|d| consumed_at(d)}.max,quantize(2000)].max) %> ]
 set ytics 200 nomirror
 
 plot "<%= input_dat.path %>" using 1:2 w histeps t "Allowed energy" lc rgb "black", \

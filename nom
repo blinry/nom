@@ -210,6 +210,7 @@ class Nom
         weight_dat.close
 
         input_dat = Tempfile.new("input")
+        input_dat << "#{start_date-1}\t0\t0\n"
         (start_date).upto(Date.today) do |date|
             input_dat << "#{date}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
         end
