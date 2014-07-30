@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 require "rubygems"
 require "nokogiri"
-require "os"
 require "uri"
 require "open-uri"
 require "date"
@@ -9,7 +8,6 @@ require "yaml"
 require "fileutils"
 require "tempfile"
 require "erb"
-require "mkmf"
 
 class WeightEntry
     attr_reader :date, :weight
@@ -73,7 +71,7 @@ class Nom
 
         if @weights.empty?
             print "Please enter your current weight: "
-            weight [gets.chomp]
+            weight [STDIN.gets.chomp]
         end
 
         alpha = 0.1
@@ -107,7 +105,7 @@ class Nom
             kg_lost = moving_average_at(start_date+skip_first) - moving_average_at(end_date)
             puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
         end
-        log_since(Date.today - 1)
+        log_since([start_date,Date.today-1].max)
     end
 
     def log
@@ -132,6 +130,10 @@ class Nom
     end
 
     def weight args
+        unless @weights.select{|w| w.date == Date.today }.empty?
+            raise "You already entered a weight for today. Use `nom editw` to modify it."
+        end
+
         weight = args.pop.to_f
         @weights << WeightEntry.new(Date.today, weight)
 
@@ -367,7 +369,7 @@ class Nom
                 return default
             else
                 print "Please enter a value for '#{description}': "
-                config[name] = gets.chomp
+                config[name] = STDIN.gets.chomp
                 open(File.join(@nom_dir,"config"), "w") do |f|
                     f << config.to_yaml
                 end
