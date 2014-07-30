@@ -153,7 +153,7 @@ class Nom
         end
 
         description = args.join(" ")
-        entry = FoodEntry.new(Date.today, kcal, description)
+        entry = FoodEntry.new((Time.now-5*60*60).to_date, kcal, description)
         @inputs << entry
         if @inputs_at[Date.today].nil?
             @inputs_at[Date.today] = []
