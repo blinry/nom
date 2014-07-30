@@ -367,7 +367,7 @@ class Nom
                 return default
             else
                 print "Please enter a value for '#{description}': "
-                config[name] = gets
+                config[name] = gets.chomp
                 open(File.join(@nom_dir,"config"), "w") do |f|
                     f << config.to_yaml
                 end
