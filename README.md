@@ -4,17 +4,17 @@
 
 # Setup
 
-Install the `nokogiri` gem:
+You'll need Ruby and gnuplot, as well as the `nokogiri` gem:
 
     $ gem install nokogiri
 
 Then clone this repository, and put the `nom` executable in your `PATH`.
 
-When you run `nom` for the first time, it will ask for your current and your desired weight, as well as a target "weight loss per week" (0.5 is a good value). Finally, it will ask for an SVG viewer (I use `eog -f`, browsers like `firefox` or `chromium` also work).
+When you run `nom` for the first time, it will ask for your current and your desired weight, as well as a target "weight loss per week" (0.5 is a good value). Finally, it will ask for an SVG viewer (I use `eog -f`, but browsers like `firefox` or `chromium` also work).
 
 # Basics
 
-`nom` operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
+*nom* operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
 
 By default, energy quantities will have the unit "kcal". You can change this by adding a line like `unit: 0.239` to your `~/.nom/config`, which means you want to use the unit "0.239 kcal" (= "1 kJ"). Energy quantities are displayed in parentheses: `(42)`
 
