@@ -332,7 +332,7 @@ class Nom
                 remaining -= i.kcal
             end
             separator
-            entry(quantize(remaining), "remaining")
+            entry(quantize(remaining), "remaining (#{(100-100.0*remaining/allowed_kcal(date)).round}% used)")
         end
     end
 
