@@ -83,20 +83,24 @@ class Nom
             trend = beta*(@moving_average_at[d]-@moving_average_at[d-1]) + (1-beta)*trend
         end
 
-        @allowed_at = {start_date => @weights.first.weight*25*1.2 - rate*1000}
-        alpha = 0.1
-        (start_date+1).upto(end_date) do |d|
-            intake = consumed_at(d-1)
-            loss = moving_average_at(d-1) - moving_average_at(d)
-            kcal_per_kg_body_fat = 7000
-            burned_kcal = loss*kcal_per_kg_body_fat
-            wanted_to_burn = rate*1000
-            burned_too_little = wanted_to_burn - burned_kcal
-            new_estimation = intake - burned_too_little
-            @allowed_at[d] = alpha*new_estimation + (1-alpha)*@allowed_at[d-1]
-        end
-        (end_date+1).upto(Date.today) do |d|
-            @allowed_at[d] = @allowed_at[d-1]
+        alpha = 0.05
+        @allowed_at = {}
+
+        rates.each do |r|
+            @allowed_at[r] = {start_date => @weights.first.weight*25*1.2 - r*1000}
+            (start_date+1).upto(end_date) do |d|
+                intake = consumed_at(d-1)
+                loss = moving_average_at(d-1) - moving_average_at(d)
+                kcal_per_kg_body_fat = 7000
+                burned_kcal = loss*kcal_per_kg_body_fat
+                wanted_to_burn = r*1000
+                burned_too_little = wanted_to_burn - burned_kcal
+                new_estimation = intake - burned_too_little
+                @allowed_at[r][d] = alpha*new_estimation + (1-alpha)*@allowed_at[r][d-1]
+            end
+            (end_date+1).upto(Date.today) do |d|
+                @allowed_at[r][d] = @allowed_at[r][d-1]
+            end
         end
     end
 
@@ -212,7 +216,11 @@ class Nom
         input_dat = Tempfile.new("input")
         input_dat << "#{start_date-1}\t0\t0\n"
         (start_date).upto(Date.today) do |date|
-            input_dat << "#{date}\t#{quantize(allowed_kcal(date))}\t#{quantize(consumed_at(date))}\n"
+            input_dat << "#{date}\t#{quantize(consumed_at(date))}"
+            rates.each do |r|
+                input_dat << "\t#{quantize(allowed_kcal(date, r))}"
+            end
+            input_dat << "\n"
         end
         input_dat.close
 
@@ -248,8 +256,8 @@ class Nom
         system("#{editor} #{ENV["HOME"]}/.nom/#{filename}")
     end
 
-    def allowed_kcal date
-        return @allowed_at[date]
+    def allowed_kcal date, r=rate
+        return @allowed_at[r][date]
     end
 
     def weight_at date
@@ -353,6 +361,10 @@ class Nom
 
     def rate
         get_config("rate", "Weight loss per week").to_f
+    end
+
+    def rates
+        [0, 0.5, 1]
     end
 
     def skip_first
