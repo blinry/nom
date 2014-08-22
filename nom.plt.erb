@@ -29,7 +29,9 @@ unset obj 1
 set yrange [ 0 : <%= quantize([(start_date..end_date).map{|d| consumed_at(d)}.max,quantize(2000)].max) %> ]
 set ytics 200 nomirror
 
-plot <% rates[0..-2].each_with_index do |r, i| %> "<%= input_dat.path %>" using 1:<%= i+3 %>:<%= i+4 %> w filledcurves t "<%= r %> kg/week", \
-<% end %> "<%= input_dat.path %>" using 1:2 w histeps t "Consumed energy"
+plot "<%= input_dat.path %>" using 1:4:(0):($2-$4) w vectors nohead lc rgb "navy" notitle, \
+"<%= input_dat.path %>" using 1:2 w points pt 13 ps 0.3 lc rgb "navy" t "Consumed energy", \
+"<%= input_dat.path %>" using 1:3 w lines lc rgb "black" t "0 kg/week", \
+"<%= input_dat.path %>" using 1:4 w lines lc rgb "forest-green" lw 2 t "<%= rate %> kg/week"
 
 unset multiplot
