@@ -159,12 +159,13 @@ class Nom
         end
 
         description = args.join(" ")
-        entry = FoodEntry.new((Time.now-5*60*60).to_date, kcal, description)
+        date = (Time.now-5*60*60).to_date
+        entry = FoodEntry.new(date, kcal, description)
         @inputs << entry
-        if @inputs_at[Date.today].nil?
-            @inputs_at[Date.today] = []
+        if @inputs_at[date].nil?
+            @inputs_at[date] = []
         end
-        @inputs_at[Date.today] << entry
+        @inputs_at[date] << entry
 
         open(File.join(@nom_dir,"input"), "w") do |f|
             last_date = @inputs.first.date
