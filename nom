@@ -365,7 +365,7 @@ class Nom
     end
 
     def rates
-        [0, 0.5, 1]
+        [0, rate]
     end
 
     def skip_first
