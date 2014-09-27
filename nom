@@ -90,6 +90,10 @@ class Nom
             @allowed_at[r] = {start_date => @weights.first.weight*25*1.2 - r*1000}
             (start_date+1).upto(end_date) do |d|
                 intake = consumed_at(d-1)
+                if intake == 0
+                    @allowed_at[r][d] = @allowed_at[r][d-1]
+                    next
+                end
                 loss = moving_average_at(d-1) - moving_average_at(d)
                 kcal_per_kg_body_fat = 7000
                 burned_kcal = loss*kcal_per_kg_body_fat
@@ -210,14 +214,25 @@ class Nom
     def plot
         weight_dat = Tempfile.new("weight")
         (start_date).upto(end_date) do |date|
-            weight_dat << "#{date}\t#{@weights.select{|w| w.date == date }.empty? ? "-1000" : weight_at(date)}\t#{moving_average_at(date)}\t\n"
+            weight_dat << "#{date}\t"
+            if @weights.select{|w| w.date == date }.empty?
+                weight_dat << "-"
+            else
+                weight_dat << "#{weight_at(date)}"
+            end
+            weight_dat << "\t#{moving_average_at(date)}\t\n"
         end
         weight_dat.close
 
         input_dat = Tempfile.new("input")
         input_dat << "#{start_date-1}\t0\t0\n"
         (start_date).upto(Date.today) do |date|
-            input_dat << "#{date}\t#{quantize(consumed_at(date))}"
+            input_dat << "#{date}\t"
+            if consumed_at(date) == 0
+                input_dat << "-"
+            else
+                input_dat << quantize(consumed_at(date))
+            end
             rates.each do |r|
                 input_dat << "\t#{quantize(allowed_kcal(date, r))}"
             end
