@@ -252,7 +252,6 @@ class Nom
 
         image_viewer = get_config("image_viewer", "Image viewer/browser")
         system(image_viewer+" "+svg.path)
-        sleep(1) # hack, give the image viewer time to start
     end
 
     def edit
