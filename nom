@@ -109,10 +109,9 @@ class Nom
     end
 
     def status
-        if Date.today >= start_date+skip_first
-            kg_lost = moving_average_at(start_date+skip_first) - moving_average_at(end_date)
-            puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
-        end
+        kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
+        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
+
         log_since([start_date,Date.today-1].max)
     end
 
@@ -381,10 +380,6 @@ class Nom
 
     def rates
         [0, rate]
-    end
-
-    def skip_first
-        7
     end
 
     def get_config name, description, default=nil
