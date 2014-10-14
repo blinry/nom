@@ -155,33 +155,11 @@ class Nom
     end
 
     def nom args
-        factors = args.pop.split("x")
-        kcal = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
-        if kcal == 0
-            raise "energy term cannot be zero"
-        end
+        nom_entry args, (Time.now-5*60*60).to_date
+    end
 
-        description = args.join(" ")
-        date = (Time.now-5*60*60).to_date
-        entry = FoodEntry.new(date, kcal, description)
-        @inputs << entry
-        if @inputs_at[date].nil?
-            @inputs_at[date] = []
-        end
-        @inputs_at[date] << entry
-
-        open(File.join(@nom_dir,"input"), "w") do |f|
-            last_date = @inputs.first.date
-            @inputs.each do |e|
-                if last_date < e.date
-                    f << "\n"
-                end
-                f << e.to_s
-                last_date = e.date
-            end
-        end
-
-        status
+    def yesterday args
+        nom_entry args, Date.today-1
     end
 
     def search args
@@ -263,6 +241,35 @@ class Nom
     end
 
     private
+
+    def nom_entry args, date
+        factors = args.pop.split("x")
+        kcal = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
+        if kcal == 0
+            raise "energy term cannot be zero"
+        end
+
+        description = args.join(" ")
+        entry = FoodEntry.new(date, kcal, description)
+        @inputs << entry
+        if @inputs_at[date].nil?
+            @inputs_at[date] = []
+        end
+        @inputs_at[date] << entry
+
+        open(File.join(@nom_dir,"input"), "w") do |f|
+            last_date = @inputs.first.date
+            @inputs.each do |e|
+                if last_date < e.date
+                    f << "\n"
+                end
+                f << e.to_s
+                last_date = e.date
+            end
+        end
+
+        status
+    end
 
     def edit_file filename
         editor = ENV["EDITOR"]
@@ -413,6 +420,7 @@ commands = [
     [ "weight", "w", "<weight>", "Report a weight measurement" ],
     [ "search", "s", "<term>", "Search for a food item in the web" ],
     [ "nom", "n", "<description> <energy>", "Report that you ate something" ],
+    [ "yesterday", "y", "<description> <energy>", "Like nom, but for yesterday" ],
     [ "plot", "p", nil, "Plot a weight/intake graph" ],
     [ "log", "l", nil, "Display the full food log" ],
     [ "grep", "g", "<term>", "Search in the food log" ],
