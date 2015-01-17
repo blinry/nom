@@ -87,7 +87,7 @@ class Nom
         @allowed_at = {}
 
         rates.each do |r|
-            @allowed_at[r] = {start_date => @weights.first.weight*25*1.2 - r*1000}
+            @allowed_at[r] = {start_date => weight_at(start_date)*25*1.2 - r*1000}
             (start_date+1).upto(end_date) do |d|
                 intake = consumed_at(d-1)
                 if intake == 0
@@ -315,11 +315,12 @@ class Nom
     end
 
     def start_date
-        if @inputs.empty?
-            @weights.first.date
-        else
-            [@inputs.first.date, @weights.first.date].min
+        @weights.reverse.each_cons(2) do |cur, prev|
+            if cur.date - prev.date > 30
+                return cur.date
+            end
         end
+        return @weights.first.date
     end
 
     def end_date
