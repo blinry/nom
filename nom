@@ -110,7 +110,7 @@ class Nom
 
     def status
         kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
-        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go!"
+        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{(days_to_go/7).round(1)} weeks."
 
         log_since([start_date,Date.today-1].max)
     end
@@ -189,6 +189,7 @@ class Nom
     end
 
     def plot
+
         weight_dat = Tempfile.new("weight")
         (start_date).upto(end_date) do |date|
             weight_dat << "#{date}\t"
