@@ -11,7 +11,7 @@ set format x "%Y-%m"
 set grid
 set lmargin 6
 
-set xrange [ "<%= start_date %>" : "<%= Date.today+days_to_go %>" ]
+set xrange [ "<%= start_date %>" : "<%= start_date+[optimal_days_to_go,days_to_go].max %>" ]
 set yrange [ <%= goal %> : <%= @weights.map{|w| w.weight}.max.ceil %> ]
 set ytics 1 nomirror
 set mxtics 1

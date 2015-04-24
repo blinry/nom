@@ -189,7 +189,6 @@ class Nom
     end
 
     def plot
-
         weight_dat = Tempfile.new("weight")
         (start_date).upto(end_date) do |date|
             weight_dat << "#{date}\t"
@@ -313,6 +312,10 @@ class Nom
 
     def days_to_go
         kcal_to_burn/(rate*1000)
+    end
+
+    def optimal_days_to_go
+        (weight_at(start_date)-goal)/(rate/7.0)
     end
 
     def start_date
