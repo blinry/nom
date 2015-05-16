@@ -11,8 +11,8 @@ set format x "%Y-%m"
 set grid
 set lmargin 6
 
-set xrange [ "<%= start_date %>" : "<%= start_date+[optimal_days_to_go,days_to_go].max %>" ]
-set yrange [ <%= goal %> : <%= @weights.map{|w| w.weight}.max.ceil %> ]
+set xrange [ "<%= start_date %>" : "<%= end_date+days_to_go %>" ]
+set yrange [ <%= [goal, @weights.map{|w| w.weight}.min].min %> : <%= @weights.map{|w| w.weight}.max.ceil %> ]
 set ytics 1 nomirror
 set mxtics 1
 set xtics 2592000 nomirror
@@ -22,7 +22,7 @@ set obj 1 fillstyle solid 1.0 fillcolor rgb "white" linewidth 0
 
 plot "<%= weight_dat.path %>" using 1:2 w points t "Weight" pt 13 ps 0.3 lc rgb "navy", \
 "<%= weight_dat.path %>" using 1:3 w l t "" lt 1 lw 2 lc rgb "navy", \
-<%= moving_average_at(start_date) %>-<%= rate %>*(x/60/60/24/7-<%= (start_date-Date.parse("1970-01-01"))/7.0 %>) t "<%= (rate).round(1) %> kg/week" lc rgb "forest-green"
+<%= moving_average_at(end_date) %>-<%= rate %>*(x/60/60/24/7-<%= (end_date-Date.parse("1970-01-01"))/7.0 %>) t "<%= (rate).round(1) %> kg/week" lc rgb "forest-green"
 
 unset obj 1
 

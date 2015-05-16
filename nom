@@ -63,6 +63,10 @@ class Nom
         @weights = read_file("weight", WeightEntry)
         @inputs = read_file("input", FoodEntry)
 
+        d = start_date
+        @inputs.delete_if{|i| i.date < d}
+        @weights.delete_if{|w| w.date < d}
+
         @inputs_at = {}
         @inputs.each do |i|
             @inputs_at[i.date] = [] if @inputs_at[i.date].nil?
@@ -287,6 +291,7 @@ class Nom
             prev_weight = @weights.select{|w| w.date < date }.max_by{|w| w.date}
             next_weight = @weights.select{|w| w.date > date }.min_by{|w| w.date}
             raise "Need a weight for #{date}" if next_weight.nil?
+            raise "Need a weight for #{date}" if prev_weight.nil?
             prev_weight.weight + (prev_weight.weight-next_weight.weight)/(prev_weight.date-next_weight.date)*(date-prev_weight.date)
         else
             w.first.weight
@@ -314,17 +319,22 @@ class Nom
         kcal_to_burn/(rate*1000)
     end
 
-    def optimal_days_to_go
-        (weight_at(start_date)-goal)/(rate/7.0)
-    end
-
     def start_date
+        first_start = clever_start = @weights.first.date
         @weights.reverse.each_cons(2) do |cur, prev|
             if cur.date - prev.date > 30
-                return cur.date
+                clever_start = cur.date
+                break
             end
         end
-        return @weights.first.date
+
+        user_start = get_config("start_date", "start date", first_start)
+
+        if user_start != first_start
+            [user_start, first_start].max
+        else
+            clever_start
+        end
     end
 
     def end_date
