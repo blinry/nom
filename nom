@@ -54,10 +54,14 @@ end
 class Nom
     def initialize
         @nom_dir = File.join(Dir.home,".nom")
-
         if not Dir.exists? @nom_dir
             puts "Creating #{@nom_dir}"
             Dir.mkdir(@nom_dir)
+        end
+
+        @config = {}
+        if File.exists? File.join(@nom_dir, "config")
+            @config = YAML.load_file(File.join(@nom_dir, "config"))
         end
 
         @weights = read_file("weight", WeightEntry)
@@ -115,6 +119,7 @@ class Nom
     def status
         kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{(days_to_go/7).round(1)} weeks."
+        puts "You consumed (#{quantize(kcal_consumed_too_much)}) too much."
 
         log_since([start_date,Date.today-1].max)
     end
@@ -319,20 +324,30 @@ class Nom
         kcal_to_burn/(rate*1000)
     end
 
-    def start_date
-        first_start = clever_start = @weights.first.date
-        @weights.reverse.each_cons(2) do |cur, prev|
-            if cur.date - prev.date > 30
-                clever_start = cur.date
-                break
+    def kcal_consumed_too_much
+        sum = 0
+        start_date.upto(end_date) do |d|
+            if consumed_at(d) != 0
+                sum += consumed_at(d) - allowed_kcal(d)
             end
         end
+        sum
+    end
 
-        user_start = get_config("start_date", "start date", first_start)
+    def start_date
+        first_start = @weights.first.date
 
-        if user_start != first_start
+        if has_config("start_date")
+            user_start = get_config("start_date", "start date")
             [user_start, first_start].max
         else
+            clever_start = @weights.first.date
+            @weights.reverse.each_cons(2) do |cur, prev|
+                if cur.date - prev.date > 30
+                    clever_start = cur.date
+                    break
+                end
+            end
             clever_start
         end
     end
@@ -403,26 +418,24 @@ class Nom
         [0, rate]
     end
 
+    def has_config name
+        @config.has_key?(name)
+    end
+
     def get_config name, description, default=nil
-        config = {}
-
-        if File.exists? File.join(@nom_dir,"config")
-            config = YAML.load_file(File.join(@nom_dir,"config"))
-        end
-
-        if not config[name]
+        if not has_config(name)
             if default
                 return default
             else
                 print "Please enter a value for '#{description}': "
-                config[name] = STDIN.gets.chomp
+                @config[name] = STDIN.gets.chomp
                 open(File.join(@nom_dir,"config"), "w") do |f|
-                    f << config.to_yaml
+                    f << @config.to_yaml
                 end
             end
         end
 
-        return config[name]
+        return @config[name]
     end
 
     def inputs_at date
