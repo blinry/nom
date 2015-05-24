@@ -119,7 +119,6 @@ class Nom
     def status
         kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{(days_to_go/7).round(1)} weeks."
-        puts "You consumed (#{quantize(kcal_consumed_too_much)}) too much."
 
         log_since([start_date,Date.today-1].max)
     end
@@ -324,9 +323,17 @@ class Nom
         kcal_to_burn/(rate*1000)
     end
 
-    def kcal_consumed_too_much
+    def balance_start
+        get_config("balance_start", "Start date of balance calculation", start_date)
+    end
+
+    def balance_end
+        Date.today-1
+    end
+
+    def kcal_balance
         sum = 0
-        start_date.upto(end_date) do |d|
+        balance_start.upto(balance_end) do |d|
             if consumed_at(d) != 0
                 sum += consumed_at(d) - allowed_kcal(d)
             end
@@ -392,6 +399,9 @@ class Nom
             end
             separator
             entry(quantize(remaining), "remaining (#{(100-100.0*remaining/allowed_kcal(date)).round}% used)")
+        end
+        if kcal_balance > 0
+            entry(quantize(kcal_balance.abs), "too much since #{balance_start}")
         end
     end
 
