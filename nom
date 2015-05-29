@@ -150,12 +150,10 @@ class Nom
         end
 
         weight = args.pop.to_f
-        @weights << WeightEntry.new(Date.today, weight)
-
-        open(File.join(@nom_dir,"weight"), "w") do |f|
-            @weights.each do |e|
-                f << e.to_s
-            end
+        entry = WeightEntry.new(Date.today, weight)
+        @weights << entry
+        open(File.join(@nom_dir,"weight"), "a") do |f|
+            f << entry.to_s
         end
 
         initialize
@@ -259,22 +257,21 @@ class Nom
 
         description = args.join(" ")
         entry = FoodEntry.new(date, kcal, description)
+
+        open(File.join(@nom_dir,"input"), "a") do |f|
+            p entry.date
+            p @inputs.last.date
+            if entry.date != @inputs.last.date
+                f << "\n"
+            end
+            f << entry.to_s
+        end
+
         @inputs << entry
         if @inputs_at[date].nil?
             @inputs_at[date] = []
         end
         @inputs_at[date] << entry
-
-        open(File.join(@nom_dir,"input"), "w") do |f|
-            last_date = @inputs.first.date
-            @inputs.each do |e|
-                if last_date < e.date
-                    f << "\n"
-                end
-                f << e.to_s
-                last_date = e.date
-            end
-        end
 
         status
     end
