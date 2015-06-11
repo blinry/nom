@@ -317,7 +317,7 @@ class Nom
     end
 
     def days_to_go
-        kcal_to_burn/(rate*1000)
+        [0, kcal_to_burn/(rate*1000)].max
     end
 
     def balance_start
