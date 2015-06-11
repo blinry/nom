@@ -118,7 +118,7 @@ class Nom
 
     def status
         kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
-        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{(days_to_go/7).round(1)} weeks."
+        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{format_duration(days_to_go)}."
 
         log_since([start_date,Date.today-1].max)
     end
@@ -372,6 +372,20 @@ class Nom
         else
             return date.to_s
         end
+    end
+
+    def format_duration days
+        if days <= 7
+            n = days
+            unit = "day"
+        elsif days <= 7*4
+            n = (days/7.0).round(1)
+            unit = "week"
+        else
+            n = (days/7.0/4.0).round(1)
+            unit = "month"
+        end
+        "#{n} #{unit}#{n == 1 ? "" : "s"}"
     end
 
     def entry value, text=""
