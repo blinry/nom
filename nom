@@ -259,8 +259,6 @@ class Nom
         entry = FoodEntry.new(date, kcal, description)
 
         open(File.join(@nom_dir,"input"), "a") do |f|
-            p entry.date
-            p @inputs.last.date
             if entry.date != @inputs.last.date
                 f << "\n"
             end
