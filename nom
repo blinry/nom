@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+
 require "rubygems"
 require "nokogiri"
 require "uri"
@@ -51,6 +52,82 @@ class FoodEntry
     end
 end
 
+class Config
+    def initialize file
+        @file = file
+
+        @config = {}
+        if File.exists? file
+            @config = YAML.load_file(file)
+        end
+
+        @defaults = {
+            # format: [ key, description, default_value, type ]
+            "rate" => [ "how much weight you want to lose per week", 0.5, Float ],
+            "goal" => [ "your target weight", nil, Float],
+            "image_viewer" => [ "your preferred image viewer/browser", guess_image_viewer, String ],
+            "unit" => [ "your desired base unit in kcal", 1, Float ],
+            "start_date" => [ "the first day that should be considered by nom [yyyy-mm-dd]", nil, Date ],
+            "balance_start" => [ "the day from which on nom should keep track of a energy balance [yyyy-mm-dd]", nil, Date ],
+        }
+    end
+
+    def guess_image_viewer
+        if RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/
+            "start"
+        elsif RbConfig::CONFIG['host_os'] =~ /darwin/
+            "open"
+        elsif RbConfig::CONFIG['host_os'] =~ /linux|bsd/
+            "xdg-open"
+        else
+            nil
+        end
+    end
+
+    def has key
+        @config.has_key?(key) or (@defaults.has_key?(key) and not @defaults[key][1].nil?)
+    end
+
+    def get key
+        v = nil
+        if @config.has_key?(key)
+            v = @config[key]
+        elsif @defaults.has_key?(key)
+            if @defaults[key][1].nil?
+                print "Please enter #{@defaults[key][0]}: "
+                @config[key] = STDIN.gets.chomp
+                open(@file, "w") do |f|
+                    f << @config.to_yaml
+                end
+                v = @config[key]
+            else
+                v = @defaults[key][1]
+            end
+        else
+            raise "Unknown configuration option '#{key}'"
+        end
+
+        if @defaults[key][2] == Float
+            v.to_f
+        elsif @defaults[key][2] == Date
+            if v.class == Date
+                v
+            else
+                Date.parse(v)
+            end
+        else
+            v
+        end
+    end
+
+    def print_usage
+        puts "Configuration options (put these in #{@file}):"
+        @defaults.each do |key, value|
+            puts "      #{key}".ljust(34)+value[0].capitalize+(value[1].nil? ? "" : " (default: '#{value[1]}')")
+        end
+    end
+end
+
 class Nom
     def initialize
         @nom_dir = File.join(Dir.home,".nom")
@@ -59,13 +136,15 @@ class Nom
             Dir.mkdir(@nom_dir)
         end
 
-        @config = {}
-        if File.exists? File.join(@nom_dir, "config")
-            @config = YAML.load_file(File.join(@nom_dir, "config"))
-        end
+        @config = Config.new(File.join(@nom_dir, "config"))
 
         @weights = read_file("weight", WeightEntry)
         @inputs = read_file("input", FoodEntry)
+
+        if @weights.empty?
+            print "Welcome to nom! Please enter your current weight: "
+            weight [STDIN.gets.chomp]
+        end
 
         d = start_date
         @inputs.delete_if{|i| i.date < d}
@@ -75,11 +154,6 @@ class Nom
         @inputs.each do |i|
             @inputs_at[i.date] = [] if @inputs_at[i.date].nil?
             @inputs_at[i.date] << i
-        end
-
-        if @weights.empty?
-            print "Please enter your current weight: "
-            weight [STDIN.gets.chomp]
         end
 
         alpha = 0.1
@@ -225,6 +299,7 @@ class Nom
 
         svg = Tempfile.new(["plot", ".svg"])
         svg.close
+        ObjectSpace.undefine_finalizer(svg) # prevent the svg file from being deleted
 
         plt_erb = IO.read(File.join(File.dirname(__FILE__), "nom.plt.erb"))
 
@@ -234,7 +309,7 @@ class Nom
 
         system("gnuplot "+plt.path)
 
-        image_viewer = get_config("image_viewer", "Image viewer/browser")
+        image_viewer = @config.get("image_viewer")
         system(image_viewer+" "+svg.path)
     end
 
@@ -244,6 +319,10 @@ class Nom
 
     def editw
         edit_file "weight"
+    end
+
+    def config_usage
+        @config.print_usage
     end
 
     private
@@ -259,7 +338,7 @@ class Nom
         entry = FoodEntry.new(date, kcal, description)
 
         open(File.join(@nom_dir,"input"), "a") do |f|
-            if entry.date != @inputs.last.date
+            if not @inputs.empty? and entry.date != @inputs.last.date
                 f << "\n"
             end
             f << entry.to_s
@@ -319,7 +398,11 @@ class Nom
     end
 
     def balance_start
-        get_config("balance_start", "Start date of balance calculation", start_date)
+        if @config.has("balance_start")
+            @config.get("balance_start")
+        else
+            start_date
+        end
     end
 
     def balance_end
@@ -339,8 +422,8 @@ class Nom
     def start_date
         first_start = @weights.first.date
 
-        if has_config("start_date")
-            user_start = get_config("start_date", "start date")
+        if @config.has("start_date")
+            user_start = @config.get("start_date")
             [user_start, first_start].max
         else
             clever_start = @weights.first.date
@@ -359,7 +442,7 @@ class Nom
     end
 
     def quantize kcal
-        return (kcal/get_config("unit", "kcal per energy unit", 1).to_f).round
+        return (1.0*kcal/@config.get("unit")).round
     end
 
     def format_date date
@@ -426,35 +509,15 @@ class Nom
     end
 
     def goal
-        get_config("goal", "Goal weight").to_f
+        @config.get("goal")
     end
 
     def rate
-        get_config("rate", "Weight loss per week").to_f
+        @config.get("rate")
     end
 
     def rates
         [0, rate]
-    end
-
-    def has_config name
-        @config.has_key?(name)
-    end
-
-    def get_config name, description, default=nil
-        if not has_config(name)
-            if default
-                return default
-            else
-                print "Please enter a value for '#{description}': "
-                @config[name] = STDIN.gets.chomp
-                open(File.join(@nom_dir,"config"), "w") do |f|
-                    f << @config.to_yaml
-                end
-            end
-        end
-
-        return @config[name]
     end
 
     def inputs_at date
@@ -463,6 +526,7 @@ class Nom
 end
 
 commands = [
+    # format: [ long_form, short_form, arguments, description ]
     [ "status", nil, nil, "Display a short food log" ],
     [ "weight", "w", "<weight>", "Report a weight measurement" ],
     [ "search", "s", "<term>", "Search for a food item in the web" ],
@@ -485,13 +549,18 @@ if command.nil?
     ARGV.unshift(cmd_name)
     if ARGV.last.to_f != 0
         if ARGV.size > 1
-            command = commands.find{|c| c[0] == "nom"}
+            # some words followed by a number
+            cmd_name = "nom"
         else
-            command = commands.find{|c| c[0] == "weight"}
+            # a single number
+            cmd_name = "weight"
         end
     else
-        command = commands.find{|c| c[0] == "search"}
+        # some words
+        cmd_name = "search"
     end
+
+    command = commands.find{|c| c[0] == cmd_name or c[1] == cmd_name}
 end
 
 if command[0] == "help"
@@ -504,6 +573,7 @@ if command[0] == "help"
     puts "      "+"<number>".ljust(28)+"weight <number>"
     puts "      "+"<term>".ljust(28)+"search <term>"
     puts "      "+"<term> <number>".ljust(28)+"nom <term> <number>"
+    nom.config_usage
 else
     begin
         if ARGV.empty?
@@ -514,6 +584,6 @@ else
     rescue Exception => e
         puts e.backtrace
         puts e.message
-        puts "Usage: nom #{command[0]} #{command[2]}"
+        puts "Something went wrong. Usage of this command is: nom #{command[0]} #{command[2]}"
     end
 end
