@@ -165,28 +165,35 @@ class Nom
             trend = beta*(@moving_average_at[d]-@moving_average_at[d-1]) + (1-beta)*trend
         end
 
-        alpha = 0.05
-        @allowed_at = {}
+        @target_weight_at = {end_date => moving_average_at(end_date)}
+        (end_date+1).upto(end_date+days_to_go+10) do |d|
+            if @target_weight_at[d-1] > goal
+                @target_weight_at[d] = @target_weight_at[d-1]-[rate/7.0, (@target_weight_at[d-1]-goal)/7.0].min
+            else
+                @target_weight_at[d] = @target_weight_at[d-1]+[rate/7.0, (goal-@target_weight_at[d-1])/7.0].min
+            end
+        end
 
-        rates.each do |r|
-            @allowed_at[r] = {start_date => weight_at(start_date)*25*1.2 - r*1000}
-            (start_date+1).upto(end_date) do |d|
-                intake = consumed_at(d-1)
-                if intake == 0
-                    @allowed_at[r][d] = @allowed_at[r][d-1]
-                    next
-                end
-                loss = moving_average_at(d-1) - moving_average_at(d)
-                kcal_per_kg_body_fat = 7000
-                burned_kcal = loss*kcal_per_kg_body_fat
-                wanted_to_burn = r*1000
-                burned_too_little = wanted_to_burn - burned_kcal
-                new_estimation = intake - burned_too_little
-                @allowed_at[r][d] = alpha*new_estimation + (1-alpha)*@allowed_at[r][d-1]
+        alpha = 0.05
+        @base_rate_at = {}
+
+        @base_rate_at = {start_date => weight_at(start_date)*25*1.2}
+        (start_date+1).upto(end_date) do |d|
+            intake = consumed_at(d-1)
+            if intake == 0
+                @base_rate_at[d] = @base_rate_at[d-1]
+                next
             end
-            (end_date+1).upto(Date.today) do |d|
-                @allowed_at[r][d] = @allowed_at[r][d-1]
-            end
+            loss = moving_average_at(d-1) - moving_average_at(d)
+            kcal_per_kg_body_fat = 7000
+            burned_kcal = loss*kcal_per_kg_body_fat
+            wanted_to_burn = 0
+            burned_too_little = wanted_to_burn - burned_kcal
+            new_estimation = intake - burned_too_little
+            @base_rate_at[d] = alpha*new_estimation + (1-alpha)*@base_rate_at[d-1]
+        end
+        (end_date+1).upto(Date.today) do |d|
+            @base_rate_at[d] = @base_rate_at[d-1]
         end
     end
 
@@ -270,14 +277,24 @@ class Nom
 
     def plot
         weight_dat = Tempfile.new("weight")
-        (start_date).upto(end_date) do |date|
+        goal_weight = moving_average_at(end_date)
+        (start_date).upto(end_date+days_to_go+10) do |date|
             weight_dat << "#{date}\t"
             if @weights.select{|w| w.date == date }.empty?
                 weight_dat << "-"
             else
                 weight_dat << "#{weight_at(date)}"
             end
-            weight_dat << "\t#{moving_average_at(date)}\t\n"
+            if date <= end_date
+                weight_dat << "\t#{moving_average_at(date)}\t"
+            else
+                weight_dat << "\t-"
+            end
+            if date >= end_date
+                weight_dat << "\t#{@target_weight_at[date]}\n"
+            else
+                weight_dat << "\t-\n"
+            end
         end
         weight_dat.close
 
@@ -290,9 +307,8 @@ class Nom
             else
                 input_dat << quantize(consumed_at(date))
             end
-            rates.each do |r|
-                input_dat << "\t#{quantize(allowed_kcal(date, r))}"
-            end
+            input_dat << "\t#{quantize(allowed_kcal(date, 0))}"
+            input_dat << "\t#{quantize(allowed_kcal(date))}"
             input_dat << "\n"
         end
         input_dat.close
@@ -359,8 +375,19 @@ class Nom
         system("#{editor} #{ENV["HOME"]}/.nom/#{filename}")
     end
 
-    def allowed_kcal date, r=rate
-        return @allowed_at[r][date]
+    def allowed_kcal date, r=nil
+        if date > end_date
+            allowed_kcal(end_date, r)
+        else
+            if r.nil?
+                if moving_average_at(date) > goal
+                    r = [(moving_average_at(date) - goal)*1, rate].min
+                else
+                    r = -[(goal - moving_average_at(date))*1, rate].min
+                end
+            end
+            @base_rate_at[date] - r*1000
+        end
     end
 
     def weight_at date
@@ -394,7 +421,7 @@ class Nom
     end
 
     def days_to_go
-        [0, kcal_to_burn/(rate*1000)].max
+        kcal_to_burn.abs/(rate*1000)
     end
 
     def balance_start
