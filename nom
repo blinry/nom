@@ -109,7 +109,7 @@ class Config
 end
 
 class WeightDatabase < Hash
-    def initialize file
+    def read file
         FileUtils.touch(file)
         IO.readlines(file).each do |line|
             date, weight = line.split(" ", 2)
@@ -131,7 +131,8 @@ class Nom
 
         @config = Config.new(File.join(@nom_dir, "config"))
 
-        @weights = WeightDatabase.new(File.join(@nom_dir, "weight"))
+        @weights = WeightDatabase.new
+        @weights.read(File.join(@nom_dir, "weight"))
         @inputs = read_file("input", FoodEntry)
 
         if @weights.empty?
@@ -142,6 +143,13 @@ class Nom
         date = truncate_date
         @inputs.delete_if{|i| i.date < date}
         @weights.delete_if{|d, w| d < date}
+
+        @weight_estimates = WeightDatabase.new
+        @weights.dates.each_cons(2) do |a, b|
+            (a+1).upto(b-1) do |d|
+                @weight_estimates[d] = @weights[a] + (@weights[a]-@weights[b])/(a-b)*(d-a)
+            end
+        end
 
         @inputs_at = {}
         @inputs.each do |i|
@@ -386,18 +394,7 @@ class Nom
     end
 
     def weight_at date
-        w = @weights[date]
-        if w.nil?
-            prev_date = @weights.dates.select{|d| d < date }.max
-            next_date = @weights.dates.select{|d| d > date }.min
-            prev_weight = @weights[prev_date]
-            next_weight = @weights[next_date]
-            raise "Need a weight for #{date}" if next_weight.nil?
-            raise "Need a weight for #{date}" if prev_weight.nil?
-            prev_weight + (prev_weight-next_weight)/(prev_date-next_date)*(date-prev_date)
-        else
-            w
-        end
+        @weights[date] || @weight_estimates[date]
     end
 
     def consumed_at date
