@@ -138,7 +138,7 @@ class Nom
 
         @config = Config.new(File.join(@nom_dir, "config"))
 
-        @weights = read_file("weight", WeightEntry)
+        @weights = read_weights(File.join(@nom_dir, "weight"))
         @inputs = read_file("input", FoodEntry)
 
         if @weights.empty?
@@ -148,7 +148,7 @@ class Nom
 
         d = start_date
         @inputs.delete_if{|i| i.date < d}
-        @weights.delete_if{|w| w.date < d}
+        @weights.delete_if{|date, weight| date < d}
 
         @inputs_at = {}
         @inputs.each do |i|
@@ -226,15 +226,17 @@ class Nom
     end
 
     def weight args
-        unless @weights.select{|w| w.date == Date.today }.empty?
+        if @weights.has_key?(Date.today)
             raise "You already entered a weight for today. Use `nom editw` to modify it."
         end
 
+        date = Date.today
         weight = args.pop.to_f
-        entry = WeightEntry.new(Date.today, weight)
-        @weights << entry
+
+        @weights[date] = weight
+
         open(File.join(@nom_dir,"weight"), "a") do |f|
-            f << entry.to_s
+            f << "#{date} #{weight}\n"
         end
 
         initialize
@@ -280,7 +282,7 @@ class Nom
         goal_weight = moving_average_at(end_date)
         (start_date).upto(end_date+days_to_go+10) do |date|
             weight_dat << "#{date}\t"
-            if @weights.select{|w| w.date == date }.empty?
+            if not @weights.has_key?(date)
                 weight_dat << "-"
             else
                 weight_dat << "#{weight_at(date)}"
@@ -391,15 +393,17 @@ class Nom
     end
 
     def weight_at date
-        w = @weights.select{|w| w.date == date }
-        if w.empty?
-            prev_weight = @weights.select{|w| w.date < date }.max_by{|w| w.date}
-            next_weight = @weights.select{|w| w.date > date }.min_by{|w| w.date}
+        w = @weights[date]
+        if w.nil?
+            prev_date = @weights.keys.select{|d| d < date }.max
+            next_date = @weights.keys.select{|d| d > date }.min
+            prev_weight = @weights[prev_date]
+            next_weight = @weights[next_date]
             raise "Need a weight for #{date}" if next_weight.nil?
             raise "Need a weight for #{date}" if prev_weight.nil?
-            prev_weight.weight + (prev_weight.weight-next_weight.weight)/(prev_weight.date-next_weight.date)*(date-prev_weight.date)
+            prev_weight + (prev_weight-next_weight)/(prev_date-next_date)*(date-prev_date)
         else
-            w.first.weight
+            w
         end
     end
 
@@ -447,25 +451,24 @@ class Nom
     end
 
     def start_date
-        first_start = @weights.first.date
+        first_start = @weights.keys.min
 
         if @config.has("start_date")
             user_start = @config.get("start_date")
             [user_start, first_start].max
         else
-            clever_start = @weights.first.date
-            @weights.reverse.each_cons(2) do |cur, prev|
-                if cur.date - prev.date > 30
-                    clever_start = cur.date
-                    break
-                end
+            # find the last gap longer than 30 days
+            gap = @weights.keys.reverse.each_cons(2).find{|a,b| a-b > 30}
+            if gap.nil?
+                first_start
+            else
+                gap.first
             end
-            clever_start
         end
     end
 
     def end_date
-        @weights.last.date
+        @weights.keys.max
     end
 
     def quantize kcal
@@ -522,6 +525,17 @@ class Nom
         if kcal_balance > 0
             entry(quantize(kcal_balance.abs), "too much since #{balance_start}")
         end
+    end
+
+    def read_weights file
+        weights = {}
+
+        FileUtils.touch(file)
+        IO.readlines(file).each do |line|
+            date, weight = line.split(" ", 2)
+            weights[Date.parse(date)] = weight.to_f
+        end
+        weights
     end
 
     def read_file name, klass

@@ -12,7 +12,7 @@ set grid
 set lmargin 6
 
 set xrange [ "<%= start_date %>" : "<%= end_date+days_to_go+10 %>" ]
-set yrange [ <%= [goal, @weights.map{|w| w.weight}.min].min-0.5 %> : <%= @weights.map{|w| w.weight}.max.ceil %> ]
+set yrange [ <%= [goal, @weights.values.min].min-0.5 %> : <%= @weights.values.max.ceil %> ]
 set ytics 1 nomirror
 set mxtics 1
 set xtics 2592000 nomirror
