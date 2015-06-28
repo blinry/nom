@@ -166,13 +166,15 @@ class Nom
             trend = beta*(@moving_average_at[d]-@moving_average_at[d-1]) + (1-beta)*trend
         end
 
-        @target_weight_at = {end_date => moving_average_at(end_date)}
-        (end_date+1).upto(end_date+days_to_go+10) do |d|
-            if @target_weight_at[d-1] > goal
-                @target_weight_at[d] = @target_weight_at[d-1]-[rate/7.0, (@target_weight_at[d-1]-goal)/7.0].min
-            else
-                @target_weight_at[d] = @target_weight_at[d-1]+[rate/7.0, (goal-@target_weight_at[d-1])/7.0].min
-            end
+        (end_date+1).upto(end_date+plot_end) do |d|
+            prev_weight = @weight_estimates[d-1] || moving_average_at(d-1)
+            @weight_estimates[d] = prev_weight+dampened_rate(prev_weight)/7.0
+        end
+
+        @moving_average_estimate = {end_date => moving_average_at(end_date)}
+        (end_date+1).upto(end_date+plot_end) do |d|
+            @moving_average_estimate[d] = alpha*@weight_estimates[d] + (1-alpha)*(@moving_average_estimate[d-1]+trend)
+            trend = beta*(@moving_average_estimate[d]-@moving_average_estimate[d-1]) + (1-beta)*trend
         end
 
         alpha = 0.05
@@ -281,9 +283,10 @@ class Nom
     def plot
         weight_dat = Tempfile.new("weight")
         goal_weight = moving_average_at(end_date)
-        (start_date).upto(end_date+days_to_go+10) do |date|
+        (start_date).upto(end_date+plot_end) do |date|
             weight_dat << "#{date}\t"
             if not @weights[date]
+                #weight_dat << "#{@weight_estimates[date]}"
                 weight_dat << "-"
             else
                 weight_dat << "#{weight_at(date)}"
@@ -294,7 +297,7 @@ class Nom
                 weight_dat << "\t-"
             end
             if date >= end_date
-                weight_dat << "\t#{@target_weight_at[date]}\n"
+                weight_dat << "\t#{@moving_average_estimate[date]}\n"
             else
                 weight_dat << "\t-\n"
             end
@@ -303,7 +306,7 @@ class Nom
 
         input_dat = Tempfile.new("input")
         input_dat << "#{start_date-1}\t0\t0\n"
-        (start_date).upto(Date.today) do |date|
+        (start_date).upto(end_date+plot_end) do |date|
             input_dat << "#{date}\t"
             if consumed_at(date) == 0
                 input_dat << "-"
@@ -380,17 +383,17 @@ class Nom
 
     def allowed_kcal date, r=nil
         if date > end_date
-            allowed_kcal(end_date, r)
-        else
-            if r.nil?
-                if moving_average_at(date) > goal
-                    r = [(moving_average_at(date) - goal)*1, rate].min
-                else
-                    r = -[(goal - moving_average_at(date))*1, rate].min
-                end
-            end
-            @base_rate_at[date] - r*1000
+            date = end_date
         end
+        if r.nil?
+            if date > end_date+1
+                r = dampened_rate(weight_at(date))
+            else
+                r = dampened_rate(moving_average_at(date))
+            end
+        end
+        p date
+        @base_rate_at[date] + r*1000
     end
 
     def weight_at date
@@ -402,7 +405,7 @@ class Nom
     end
 
     def moving_average_at date
-        @moving_average_at[date]
+        @moving_average_at[date] || @moving_average_estimate[date]
     end
 
     def kg_to_go
@@ -416,6 +419,10 @@ class Nom
 
     def days_to_go
         kcal_to_burn.abs/(rate*1000)
+    end
+
+    def plot_end
+        days_to_go + 14
     end
 
     def balance_start
@@ -538,6 +545,15 @@ class Nom
 
     def rate
         @config.get("rate")
+    end
+
+    def dampened_rate weight
+        r = (goal-weight).to_f
+        if r.abs > 1
+            r/r.abs*rate
+        else
+            r*rate
+        end
     end
 
     def rates
