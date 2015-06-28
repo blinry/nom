@@ -1,8 +1,8 @@
 # nom
 
-**nom** is a command line program that helps you lose weight by tracking your energy intake and creating a negative feedback loop. It's inspired by John Walker's [The Hacker's Diet](https://www.fourmilab.ch/hackdiet/) and tries to automate things as much as possible.
+**nom** is a command line tool that helps you lose weight by tracking your energy intake and creating a negative feedback loop. It's inspired by John Walker's [The Hacker's Diet](https://www.fourmilab.ch/hackdiet/) and tries to automate things as much as possible.
 
-# Setup
+# Installation
 
 You'll need Ruby and gnuplot, as well as the `nokogiri` gem:
 
@@ -10,7 +10,7 @@ You'll need Ruby and gnuplot, as well as the `nokogiri` gem:
 
 Then clone this repository, and put the `nom` executable in your `PATH`.
 
-When you run `nom` for the first time, it will ask for your current and your desired weight, as well as a target "weight loss per week" (0.5 is a good value). Finally, it will ask for an SVG viewer (I use `eog -f`, but browsers like `firefox` or `chromium` also work).
+When you run `nom` for the first time, it will ask for your current and your desired weight, as well as a target "weight loss per week" (0.5 is a good value).
 
 # Basics
 
@@ -29,7 +29,7 @@ Enter `nom help` if you're lost:
        w, weight <weight>             Report a weight measurement
        s, search <term>               Search for a food item in the web
        n, nom <description> <energy>  Report that you ate something
-       y, yesterday <description> <energy>Like nom, but for yesterday
+       y, yesterday <desc.> <energy>  Like nom, but for yesterday
        p, plot                        Plot a weight/intake graph
        l, log                         Display the full food log
        g, grep <term>                 Search in the food log
@@ -41,10 +41,10 @@ Enter `nom help` if you're lost:
           <number>                    weight <number>
           <term>                      search <term>
           <term> <number>             nom <term> <number>
-    Configuration options (put these in ~/.nom/config):
+    Configuration options (put these in /home/seb/.nom/config):
           rate                        How much weight you want to lose per week (default: '0.5')
           goal                        Your target weight
-          image_viewer                Your preferred image viewer/browser (default: 'xdg-open')
+          image_viewer                Your preferred svg viewer, for example 'eog -f', 'firefox', 'chromium' (default: 'xdg-open')
           unit                        Your desired base unit in kcal (default: '1')
           start_date                  The first day that should be considered by nom [yyyy-mm-dd]
           balance_start               The day from which on nom should keep track of a energy balance [yyyy-mm-dd]
