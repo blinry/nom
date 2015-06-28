@@ -24,12 +24,12 @@ Weight quantities are displayed as "kg", but you can use arbitrary units, like p
 
 Enter `nom help` if you're lost:
 
-    $ nom help
     Available subcommands:
           status                      Display a short food log
        w, weight <weight>             Report a weight measurement
        s, search <term>               Search for a food item in the web
        n, nom <description> <energy>  Report that you ate something
+       y, yesterday <description> <energy>Like nom, but for yesterday
        p, plot                        Plot a weight/intake graph
        l, log                         Display the full food log
        g, grep <term>                 Search in the food log
@@ -41,6 +41,13 @@ Enter `nom help` if you're lost:
           <number>                    weight <number>
           <term>                      search <term>
           <term> <number>             nom <term> <number>
+    Configuration options (put these in ~/.nom/config):
+          rate                        How much weight you want to lose per week (default: '0.5')
+          goal                        Your target weight
+          image_viewer                Your preferred image viewer/browser (default: 'xdg-open')
+          unit                        Your desired base unit in kcal (default: '1')
+          start_date                  The first day that should be considered by nom [yyyy-mm-dd]
+          balance_start               The day from which on nom should keep track of a energy balance [yyyy-mm-dd]
 
 So, call `nom` without arguments to get a summary of your current status:
 
@@ -83,7 +90,7 @@ Enter your weight regularly:
 
     $ nom 78.2
 
-And get nice graphs. The upper graph shows weight over time, with a weighted (no pun intended) moving average and a green target line. The lower graph shows daily energy intake targets and actual intake:
+And get nice graphs. The upper graph shows weight over time, with a weighted (no pun intended) moving average, a weight prediction, and a green finish line. The lower graph shows daily energy intake targets and actual intake:
 
     $ nom plot
     

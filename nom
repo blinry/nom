@@ -306,7 +306,7 @@ class Nom
 
         input_dat = Tempfile.new("input")
         input_dat << "#{start_date-1}\t0\t0\n"
-        (start_date).upto(end_date+plot_end) do |date|
+        (start_date).upto(end_date) do |date|
             input_dat << "#{date}\t"
             if consumed_at(date) == 0
                 input_dat << "-"
@@ -382,9 +382,6 @@ class Nom
     end
 
     def allowed_kcal date, r=nil
-        if date > end_date
-            date = end_date
-        end
         if r.nil?
             if date > end_date+1
                 r = dampened_rate(weight_at(date))
@@ -392,7 +389,9 @@ class Nom
                 r = dampened_rate(moving_average_at(date))
             end
         end
-        p date
+        if date > end_date
+            date = end_date
+        end
         @base_rate_at[date] + r*1000
     end
 
