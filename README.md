@@ -94,7 +94,7 @@ And get nice graphs. The upper graph shows weight over time, with a weighted (no
 
     $ nom plot
     
-![Graphs of weight and input over time](http://files.morr.cc/nom-plot.svg)
+![Graphs of weight and input over time](http://files.morr.cc/nom-0.1.0.svg)
 
 ## License: GPLv2+
 
