@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require "rubygems"
 require "nokogiri"
 require "uri"
 require "open-uri"
@@ -323,7 +322,7 @@ class Nom
         svg.close
         ObjectSpace.undefine_finalizer(svg) # prevent the svg file from being deleted
 
-        plt_erb = IO.read(File.join(File.dirname(__FILE__), "nom.plt.erb"))
+        plt_erb = IO.read(File.join(File.dirname(File.expand_path(__FILE__)), "../lib/nom/nom.plt.erb"))
 
         plt = Tempfile.new("plt")
         plt << ERB.new(plt_erb).result(binding)
