@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Sebastian Morr"]
   s.email       = "sebastian@morr.cc"
   s.files       = ["lib/nom/nom.plt.erb"]
+  s.requirements << 'gnuplot 5'
   s.homepage    = "https://github.com/blinry/nom"
   s.license     = "GPL-2.0+"
 end

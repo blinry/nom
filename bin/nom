@@ -280,6 +280,8 @@ class Nom
     end
 
     def plot
+        raise "To use this subcommand, please install 'gnuplot'." unless which("gnuplot")
+
         weight_dat = Tempfile.new("weight")
         goal_weight = moving_average_at(end_date)
         (start_date).upto(end_date+plot_end) do |date|
@@ -560,6 +562,17 @@ class Nom
 
     def inputs_at date
         @inputs_at[date] || []
+    end
+
+    def which(cmd)
+        exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
+        ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+            exts.each { |ext|
+                exe = File.join(path, "#{cmd}#{ext}")
+                return exe if File.executable?(exe) && !File.directory?(exe)
+            }
+        end
+        return nil
     end
 end
 
