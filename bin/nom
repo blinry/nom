@@ -351,8 +351,12 @@ class Nom
     private
 
     def nom_entry args, date
-        factors = args.pop.split("x")
-        kcal = factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
+        summands = args.pop.split("+")
+        kcal = summands.inject(0) do |sum, summand|
+            factors = summand.split("x")
+            sum + factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
+        end
+
         if kcal == 0
             raise "energy term cannot be zero"
         end
