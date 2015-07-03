@@ -150,7 +150,7 @@ class Nom
 
         input_dat = Tempfile.new("input")
         input_dat << "#{@weights.first-1}\t0\t0\n"
-        (@weights.first).upto(@weights.last) do |date|
+        (@weights.first).upto(Date.today) do |date|
             input_dat << "#{date}\t"
             if consumed_at(date) == 0
                 input_dat << "-"
