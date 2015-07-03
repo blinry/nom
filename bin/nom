@@ -107,17 +107,106 @@ class Config
     end
 end
 
-class WeightDatabase < Hash
-    def read file
+class WeightDatabase
+    def initialize(file)
+        @interpolated = {}
+        @weights = {}
+        @moving_averages = {}
+
         FileUtils.touch(file)
         IO.readlines(file).each do |line|
             date, weight = line.split(" ", 2)
-            self[Date.parse(date)] = weight.to_f
+            date = Date.parse(date)
+            @weights[date] = weight.to_f
+            @interpolated[date] = false
         end
     end
 
-    alias dates keys
-    alias weights values
+    def interpolate_gaps!
+        dates.each_cons(2) do |a, b|
+            (a+1).upto(b-1) do |d|
+                @weights[d] = @weights[a] + (@weights[a]-@weights[b])/(a-b)*(d-a)
+                @interpolated[d] = true
+            end
+        end
+    end
+
+    def precompute_moving_average!(alpha, beta, rate)
+        trend = -rate/7.0
+
+        @moving_averages[min] = at(min)
+        (min+1).upto(max).each do |d|
+            @moving_averages[d] = alpha*at(d) + (1-alpha)*(@moving_averages[d-1]+trend)
+            trend = beta*(@moving_averages[d]-@moving_averages[d-1]) + (1-beta)*trend
+        end
+    end
+
+    def predict_weights!(rate, goal, tail)
+        d = (max+1)
+        while @weights[d-tail].nil? or @weights[d-tail] > goal+0.001
+            prev_weight = @moving_averages[d-1] || @weights[d-1]
+            @weights[d] = prev_weight+dampened_rate(prev_weight, goal, rate)/7.0
+            @interpolated[d] = true
+            d += 1
+        end
+    end
+
+    def dampened_rate weight, goal, rate
+        r = (goal-weight).to_f
+        if r.abs > 1
+            r/r.abs*rate
+        else
+            r*rate
+        end
+    end
+
+    def interpolated_at? date
+        @interpolated[date]
+    end
+
+    def at date
+        @weights[date]
+    end
+
+    def moving_average_at date
+        @moving_averages[date]
+    end
+
+    def rate_at date, goal, rate
+        if date > last_real_date
+            dampened_rate(@weights[date], goal, rate)
+        else
+            dampened_rate(@moving_averages[date], goal, rate)
+        end
+    end
+
+    def dates
+        @weights.keys
+    end
+
+    def weights
+        @weights.values
+    end
+
+    def empty?
+        @weights.empty?
+    end
+
+    def min
+        dates.min
+    end
+
+    def max
+        dates.max
+    end
+
+    def last_real_date
+        @interpolated.select{|d, i| not i}.keys.max
+    end
+
+    def truncate date
+        @weights.delete_if{|d, w| d < date}
+    end
 end
 
 class Nom
@@ -130,8 +219,7 @@ class Nom
 
         @config = Config.new(File.join(@nom_dir, "config"))
 
-        @weights = WeightDatabase.new
-        @weights.read(File.join(@nom_dir, "weight"))
+        @weights = WeightDatabase.new(File.join(@nom_dir, "weight"))
         @inputs = read_file("input", FoodEntry)
 
         if @weights.empty?
@@ -141,66 +229,19 @@ class Nom
 
         date = truncate_date
         @inputs.delete_if{|i| i.date < date}
-        @weights.delete_if{|d, w| d < date}
+        @weights.truncate(date)
 
-        @weight_estimates = WeightDatabase.new
-        @weights.dates.each_cons(2) do |a, b|
-            (a+1).upto(b-1) do |d|
-                @weight_estimates[d] = @weights[a] + (@weights[a]-@weights[b])/(a-b)*(d-a)
-            end
-        end
+        @weights.interpolate_gaps!
+        @weights.precompute_moving_average!(0.1, 0.1, rate)
+        @weights.predict_weights!(rate, goal, 14)
+        @weights.precompute_moving_average!(0.1, 0.1, rate)
 
-        @inputs_at = {}
-        @inputs.each do |i|
-            @inputs_at[i.date] = [] if @inputs_at[i.date].nil?
-            @inputs_at[i.date] << i
-        end
-
-        alpha = 0.1
-        beta = 0.1
-        trend = -rate/7.0
-        @moving_average_at = {start_date => weight_at(start_date)}
-        (start_date+1).upto(end_date) do |d|
-            @moving_average_at[d] = alpha*weight_at(d) + (1-alpha)*(@moving_average_at[d-1]+trend)
-            trend = beta*(@moving_average_at[d]-@moving_average_at[d-1]) + (1-beta)*trend
-        end
-
-        (end_date+1).upto(end_date+plot_end) do |d|
-            prev_weight = @weight_estimates[d-1] || moving_average_at(d-1)
-            @weight_estimates[d] = prev_weight+dampened_rate(prev_weight)/7.0
-        end
-
-        @moving_average_estimate = {end_date => moving_average_at(end_date)}
-        (end_date+1).upto(end_date+plot_end) do |d|
-            @moving_average_estimate[d] = alpha*@weight_estimates[d] + (1-alpha)*(@moving_average_estimate[d-1]+trend)
-            trend = beta*(@moving_average_estimate[d]-@moving_average_estimate[d-1]) + (1-beta)*trend
-        end
-
-        alpha = 0.05
-        @base_rate_at = {}
-
-        @base_rate_at = {start_date => weight_at(start_date)*25*1.2}
-        (start_date+1).upto(end_date) do |d|
-            intake = consumed_at(d-1)
-            if intake == 0
-                @base_rate_at[d] = @base_rate_at[d-1]
-                next
-            end
-            loss = moving_average_at(d-1) - moving_average_at(d)
-            kcal_per_kg_body_fat = 7000
-            burned_kcal = loss*kcal_per_kg_body_fat
-            wanted_to_burn = 0
-            burned_too_little = wanted_to_burn - burned_kcal
-            new_estimation = intake - burned_too_little
-            @base_rate_at[d] = alpha*new_estimation + (1-alpha)*@base_rate_at[d-1]
-        end
-        (end_date+1).upto(Date.today) do |d|
-            @base_rate_at[d] = @base_rate_at[d-1]
-        end
+        precompute_inputs_at
+        precompute_base_rate_at
     end
 
     def status
-        kg_lost = moving_average_at(start_date) - moving_average_at(end_date)
+        kg_lost = @weights.moving_average_at(start_date) - @weights.moving_average_at(end_date)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{format_duration(days_to_go)}."
 
         log_since([start_date,Date.today-1].max)
@@ -228,14 +269,12 @@ class Nom
     end
 
     def weight args
-        if @weights[Date.today]
+        if not @weights.interpolated_at?(Date.today)
             raise "You already entered a weight for today. Use `nom editw` to modify it."
         end
 
         date = Date.today
         weight = args.pop.to_f
-
-        @weights[date] = weight
 
         open(File.join(@nom_dir,"weight"), "a") do |f|
             f << "#{date} #{weight}\n"
@@ -283,22 +322,22 @@ class Nom
         raise "To use this subcommand, please install 'gnuplot'." unless which("gnuplot")
 
         weight_dat = Tempfile.new("weight")
-        goal_weight = moving_average_at(end_date)
+        goal_weight = @weights.moving_average_at(end_date)
         (start_date).upto(end_date+plot_end) do |date|
             weight_dat << "#{date}\t"
-            if not @weights[date]
+            if @weights.interpolated_at?(date)
                 #weight_dat << "#{@weight_estimates[date]}"
                 weight_dat << "-"
             else
-                weight_dat << "#{weight_at(date)}"
+                weight_dat << "#{@weights.at(date)}"
             end
             if date <= end_date
-                weight_dat << "\t#{moving_average_at(date)}\t"
+                weight_dat << "\t#{@weights.moving_average_at(date)}\t"
             else
                 weight_dat << "\t-"
             end
             if date >= end_date
-                weight_dat << "\t#{@moving_average_estimate[date]}\n"
+                weight_dat << "\t#{@weights.moving_average_at(date)}\n"
             else
                 weight_dat << "\t-\n"
             end
@@ -388,11 +427,7 @@ class Nom
 
     def allowed_kcal date, r=nil
         if r.nil?
-            if date > end_date+1
-                r = dampened_rate(weight_at(date))
-            else
-                r = dampened_rate(moving_average_at(date))
-            end
+            r = @weights.rate_at(date, goal, rate)
         end
         if date > end_date
             date = end_date
@@ -400,20 +435,12 @@ class Nom
         @base_rate_at[date] + r*1000
     end
 
-    def weight_at date
-        @weights[date] || @weight_estimates[date]
-    end
-
     def consumed_at date
         inputs_at(date).inject(0){ |sum, i| sum+i.kcal }
     end
 
-    def moving_average_at date
-        @moving_average_at[date] || @moving_average_estimate[date]
-    end
-
     def kg_to_go
-        moving_average_at(end_date) - goal
+        @weights.moving_average_at(end_date) - goal
     end
 
     def kcal_to_burn
@@ -551,21 +578,57 @@ class Nom
         @config.get("rate")
     end
 
-    def dampened_rate weight
-        r = (goal-weight).to_f
-        if r.abs > 1
-            r/r.abs*rate
-        else
-            r*rate
-        end
-    end
-
     def rates
         [0, rate]
     end
 
     def inputs_at date
         @inputs_at[date] || []
+    end
+
+    def precompute_inputs_at
+        @inputs_at = {}
+        @inputs.each do |i|
+            @inputs_at[i.date] = [] if @inputs_at[i.date].nil?
+            @inputs_at[i.date] << i
+        end
+    end
+
+    def precompute_weight_estimates
+    end
+
+    def precompute_moving_average_estimate(trend)
+        alpha = 0.1
+        beta = 0.1
+        @moving_average_estimate = {end_date => moving_average_at(end_date)}
+        (end_date+1).upto(end_date+plot_end) do |d|
+            @moving_average_estimate[d] = alpha*@weight_estimates[d] + (1-alpha)*(@moving_average_estimate[d-1]+trend)
+            trend = beta*(@moving_average_estimate[d]-@moving_average_estimate[d-1]) + (1-beta)*trend
+        end
+    end
+
+    def precompute_base_rate_at
+        alpha = 0.05
+        @base_rate_at = {}
+
+        @base_rate_at = {start_date => @weights.at(start_date)*25*1.2}
+        (start_date+1).upto(end_date) do |d|
+            intake = consumed_at(d-1)
+            if intake == 0
+                @base_rate_at[d] = @base_rate_at[d-1]
+                next
+            end
+            loss = @weights.moving_average_at(d-1) - @weights.moving_average_at(d)
+            kcal_per_kg_body_fat = 7000
+            burned_kcal = loss*kcal_per_kg_body_fat
+            wanted_to_burn = 0
+            burned_too_little = wanted_to_burn - burned_kcal
+            new_estimation = intake - burned_too_little
+            @base_rate_at[d] = alpha*new_estimation + (1-alpha)*@base_rate_at[d-1]
+        end
+        (end_date+1).upto(Date.today) do |d|
+            @base_rate_at[d] = @base_rate_at[d-1]
+        end
     end
 
     def which(cmd)
