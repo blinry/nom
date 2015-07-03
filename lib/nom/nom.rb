@@ -32,9 +32,9 @@ class Nom
         @weights.truncate(date)
 
         @weights.interpolate_gaps!
-        @weights.precompute_moving_average!(0.1, 0.1, rate)
+        @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
         @weights.predict_weights!(rate, goal, 30)
-        @weights.precompute_moving_average!(0.1, 0.1, rate)
+        @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
 
         precompute_inputs_at
         precompute_base_rate_at
@@ -42,7 +42,13 @@ class Nom
 
     def status
         kg_lost = @weights.moving_average_at(@weights.first) - @weights.moving_average_at(@weights.last_real)
-        puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{format_duration(days_to_go)}."
+        print "#{kg_lost.round(1)} kg down"
+        if kg_lost+kg_to_go > 0
+            print " (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%)"
+        end
+        print ", #{kg_to_go.round(1)} kg to go!"
+        print " You'll reach your goal in approximately #{format_duration(days_to_go)}."
+        puts
 
         log_since([@weights.first,Date.today-1].max)
     end
@@ -69,7 +75,7 @@ class Nom
     end
 
     def weight args
-        if not @weights.interpolated_at?(Date.today)
+        if @weights.real?(Date.today)
             raise "You already entered a weight for today. Use `nom editw` to modify it."
         end
 
@@ -124,11 +130,10 @@ class Nom
         weight_dat = Tempfile.new("weight")
         (@weights.first).upto(plot_end) do |date|
             weight_dat << "#{date}\t"
-            if @weights.interpolated_at?(date)
-                #weight_dat << "#{@weight_estimates[date]}"
-                weight_dat << "-"
-            else
+            if @weights.real?(date)
                 weight_dat << "#{@weights.at(date)}"
+            else
+                weight_dat << "-"
             end
             if date <= @weights.last_real
                 weight_dat << "\t#{@weights.moving_average_at(date)}\t"
@@ -311,7 +316,7 @@ class Nom
 
     def format_duration days
         if days <= 7
-            n = days
+            n = days.round(1)
             unit = "day"
         elsif days <= 7*4
             n = (days/7.0).round(1)

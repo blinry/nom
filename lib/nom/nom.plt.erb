@@ -12,7 +12,7 @@ set grid
 set lmargin 6
 
 set xrange [ "<%= @weights.first %>" : "<%= plot_end %>" ]
-set yrange [ <%= [goal-1, @weights.first].min.floor %> : <%= [goal+1, @weights.max].max.ceil %> ]
+set yrange [ <%= [goal-1, @weights.min].min.floor %> : <%= [goal+1, @weights.max].max.ceil %> ]
 set ytics 1 nomirror
 set mxtics 1
 set xtics 2592000 nomirror

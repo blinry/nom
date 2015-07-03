@@ -25,8 +25,8 @@ class WeightDatabase
         end
     end
 
-    def precompute_moving_average!(alpha, beta, rate)
-        trend = -rate/7.0
+    def precompute_moving_average!(alpha, beta, goal, rate)
+        trend = dampened_rate(@weights[first], goal, rate)/7.0
 
         @moving_averages[first] = at(first)
         (first+1).upto(last).each do |d|
@@ -40,7 +40,6 @@ class WeightDatabase
         loop do
             if (@weights[d] - goal).abs < 0.1
                 tail -= 1
-                p tail
             end
             if tail == 0
                 break
@@ -62,8 +61,8 @@ class WeightDatabase
         end
     end
 
-    def interpolated_at? date
-        @interpolated[date]
+    def real? date
+        @weights[date] and not @interpolated[date]
     end
 
     def at date
@@ -102,11 +101,20 @@ class WeightDatabase
         @weights.delete_if{|d, w| d < date}
     end
 
+    def min
+        @weights.values.min
+    end
+
     def max
         @weights.values.max
     end
 
     def find_gap days
-        @weights.keys.reverse.each_cons(2).find{|a,b| a-b > days}.reverse
+        gap = @weights.keys.reverse.each_cons(2).find{|a,b| a-b > days}
+        if gap
+            gap.reverse
+        else
+            nil
+        end
     end
 end
