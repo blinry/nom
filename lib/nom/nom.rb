@@ -33,7 +33,7 @@ class Nom
 
         @weights.interpolate_gaps!
         @weights.precompute_moving_average!(0.1, 0.1, rate)
-        @weights.predict_weights!(rate, goal, 14)
+        @weights.predict_weights!(rate, goal, 30)
         @weights.precompute_moving_average!(0.1, 0.1, rate)
 
         precompute_inputs_at
@@ -41,14 +41,14 @@ class Nom
     end
 
     def status
-        kg_lost = @weights.moving_average_at(start_date) - @weights.moving_average_at(end_date)
+        kg_lost = @weights.moving_average_at(@weights.first) - @weights.moving_average_at(@weights.last_real)
         puts "#{kg_lost.round(1)} kg down (#{(100*kg_lost/(kg_lost+kg_to_go)).round}%), #{kg_to_go.round(1)} kg to go! You'll reach your goal in approximately #{format_duration(days_to_go)}."
 
-        log_since([start_date,Date.today-1].max)
+        log_since([@weights.first,Date.today-1].max)
     end
 
     def log
-        log_since(start_date)
+        log_since(@weights.first)
     end
 
     def grep args
@@ -122,8 +122,7 @@ class Nom
         raise "To use this subcommand, please install 'gnuplot'." unless which("gnuplot")
 
         weight_dat = Tempfile.new("weight")
-        goal_weight = @weights.moving_average_at(end_date)
-        (start_date).upto(end_date+plot_end) do |date|
+        (@weights.first).upto(plot_end) do |date|
             weight_dat << "#{date}\t"
             if @weights.interpolated_at?(date)
                 #weight_dat << "#{@weight_estimates[date]}"
@@ -131,12 +130,12 @@ class Nom
             else
                 weight_dat << "#{@weights.at(date)}"
             end
-            if date <= end_date
+            if date <= @weights.last_real
                 weight_dat << "\t#{@weights.moving_average_at(date)}\t"
             else
                 weight_dat << "\t-"
             end
-            if date >= end_date
+            if date >= @weights.last_real
                 weight_dat << "\t#{@weights.moving_average_at(date)}\n"
             else
                 weight_dat << "\t-\n"
@@ -145,8 +144,8 @@ class Nom
         weight_dat.close
 
         input_dat = Tempfile.new("input")
-        input_dat << "#{start_date-1}\t0\t0\n"
-        (start_date).upto(end_date) do |date|
+        input_dat << "#{@weights.first-1}\t0\t0\n"
+        (@weights.first).upto(@weights.last) do |date|
             input_dat << "#{date}\t"
             if consumed_at(date) == 0
                 input_dat << "-"
@@ -229,8 +228,8 @@ class Nom
         if r.nil?
             r = @weights.rate_at(date, goal, rate)
         end
-        if date > end_date
-            date = end_date
+        if date > @weights.last
+            date = @weights.last
         end
         @base_rate_at[date] + r*1000
     end
@@ -240,7 +239,7 @@ class Nom
     end
 
     def kg_to_go
-        @weights.moving_average_at(end_date) - goal
+        @weights.moving_average_at(Date.today) - goal
     end
 
     def kcal_to_burn
@@ -253,14 +252,14 @@ class Nom
     end
 
     def plot_end
-        days_to_go + 14
+        @weights.last
     end
 
     def balance_start
         if @config.has("balance_start")
             @config.get("balance_start")
         else
-            start_date
+            @weights.first
         end
     end
 
@@ -279,28 +278,21 @@ class Nom
     end
 
     def truncate_date
-        first_start = @weights.dates.min
+        first_start = @weights.first
 
         if @config.has("start_date")
             user_start = @config.get("start_date")
             [user_start, first_start].max
         else
             # find the last gap longer than 30 days
-            gap = @weights.dates.reverse.each_cons(2).find{|a,b| a-b > 30}
+            gap = @weights.find_gap(30)
+
             if gap.nil?
                 first_start
             else
-                gap.first
+                gap[1]
             end
         end
-    end
-
-    def start_date
-        @weights.dates.min
-    end
-
-    def end_date
-        @weights.dates.max
     end
 
     def quantize kcal
@@ -378,10 +370,6 @@ class Nom
         @config.get("rate")
     end
 
-    def rates
-        [0, rate]
-    end
-
     def inputs_at date
         @inputs_at[date] || []
     end
@@ -394,25 +382,11 @@ class Nom
         end
     end
 
-    def precompute_weight_estimates
-    end
-
-    def precompute_moving_average_estimate(trend)
-        alpha = 0.1
-        beta = 0.1
-        @moving_average_estimate = {end_date => moving_average_at(end_date)}
-        (end_date+1).upto(end_date+plot_end) do |d|
-            @moving_average_estimate[d] = alpha*@weight_estimates[d] + (1-alpha)*(@moving_average_estimate[d-1]+trend)
-            trend = beta*(@moving_average_estimate[d]-@moving_average_estimate[d-1]) + (1-beta)*trend
-        end
-    end
-
     def precompute_base_rate_at
         alpha = 0.05
-        @base_rate_at = {}
+        @base_rate_at = {@weights.first => @weights.at(@weights.first)*25*1.2}
 
-        @base_rate_at = {start_date => @weights.at(start_date)*25*1.2}
-        (start_date+1).upto(end_date) do |d|
+        (@weights.first+1).upto(@weights.last) do |d|
             intake = consumed_at(d-1)
             if intake == 0
                 @base_rate_at[d] = @base_rate_at[d-1]
@@ -421,12 +395,10 @@ class Nom
             loss = @weights.moving_average_at(d-1) - @weights.moving_average_at(d)
             kcal_per_kg_body_fat = 7000
             burned_kcal = loss*kcal_per_kg_body_fat
-            wanted_to_burn = 0
-            burned_too_little = wanted_to_burn - burned_kcal
-            new_estimation = intake - burned_too_little
-            @base_rate_at[d] = alpha*new_estimation + (1-alpha)*@base_rate_at[d-1]
+            new_base_rate_estimation = intake + burned_kcal
+            @base_rate_at[d] = alpha*new_base_rate_estimation + (1-alpha)*@base_rate_at[d-1]
         end
-        (end_date+1).upto(Date.today) do |d|
+        (@weights.last+1).upto(Date.today) do |d|
             @base_rate_at[d] = @base_rate_at[d-1]
         end
     end

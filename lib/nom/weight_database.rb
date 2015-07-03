@@ -17,7 +17,7 @@ class WeightDatabase
     end
 
     def interpolate_gaps!
-        dates.each_cons(2) do |a, b|
+        @weights.keys.each_cons(2) do |a, b|
             (a+1).upto(b-1) do |d|
                 @weights[d] = @weights[a] + (@weights[a]-@weights[b])/(a-b)*(d-a)
                 @interpolated[d] = true
@@ -28,20 +28,28 @@ class WeightDatabase
     def precompute_moving_average!(alpha, beta, rate)
         trend = -rate/7.0
 
-        @moving_averages[min] = at(min)
-        (min+1).upto(max).each do |d|
+        @moving_averages[first] = at(first)
+        (first+1).upto(last).each do |d|
             @moving_averages[d] = alpha*at(d) + (1-alpha)*(@moving_averages[d-1]+trend)
             trend = beta*(@moving_averages[d]-@moving_averages[d-1]) + (1-beta)*trend
         end
     end
 
     def predict_weights!(rate, goal, tail)
-        d = (max+1)
-        while @weights[d-tail].nil? or @weights[d-tail] > goal+0.001
+        d = (last)
+        loop do
+            if (@weights[d] - goal).abs < 0.1
+                tail -= 1
+                p tail
+            end
+            if tail == 0
+                break
+            end
+
+            d += 1
             prev_weight = @moving_averages[d-1] || @weights[d-1]
             @weights[d] = prev_weight+dampened_rate(prev_weight, goal, rate)/7.0
             @interpolated[d] = true
-            d += 1
         end
     end
 
@@ -67,38 +75,38 @@ class WeightDatabase
     end
 
     def rate_at date, goal, rate
-        if date > last_real_date
+        if date > last_real
             dampened_rate(@weights[date], goal, rate)
         else
             dampened_rate(@moving_averages[date], goal, rate)
         end
     end
 
-    def dates
-        @weights.keys
-    end
-
-    def weights
-        @weights.values
-    end
-
     def empty?
         @weights.empty?
     end
 
-    def min
-        dates.min
+    def first
+        @weights.keys.min
     end
 
-    def max
-        dates.max
+    def last
+        @weights.keys.max
     end
 
-    def last_real_date
+    def last_real
         @interpolated.select{|d, i| not i}.keys.max
     end
 
     def truncate date
         @weights.delete_if{|d, w| d < date}
+    end
+
+    def max
+        @weights.values.max
+    end
+
+    def find_gap days
+        @weights.keys.reverse.each_cons(2).find{|a,b| a-b > days}.reverse
     end
 end
