@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version     = "0.1.0"
   s.add_runtime_dependency "nokogiri", "~> 1.6"
   s.executables << "nom"
-  s.date        = "2015-06-30"
+  s.date        = "2015-07-03"
   s.summary     = "Lose weight and hair through stress and poor nutrition"
   s.description = "nom is a command line tool that helps you lose weight by
                    tracking your energy intake and creating a negative feedback loop.
@@ -11,8 +11,8 @@ Gem::Specification.new do |s|
                    automate things as much as possible."
   s.authors     = ["Sebastian Morr"]
   s.email       = "sebastian@morr.cc"
-  s.files       = ["lib/nom/nom.plt.erb"]
-  s.requirements << 'gnuplot 5'
+  s.files       = Dir.glob("{bin,lib}/**/*") + %w(README.md)
+  s.requirements << 'gnuplot >= 5.0'
   s.homepage    = "https://github.com/blinry/nom"
   s.license     = "GPL-2.0+"
 end
