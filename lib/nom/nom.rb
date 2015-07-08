@@ -8,6 +8,7 @@ require "erb"
 require "nom/food_entry"
 require "nom/config"
 require "nom/weight_database"
+require "nom/helpers"
 
 module Nom
     class Nom
@@ -181,11 +182,11 @@ module Nom
         end
 
         def edit
-            edit_file "input"
+            Helpers::open_file File.join(@nom_dir, "input")
         end
 
         def editw
-            edit_file "weight"
+            Helpers::open_file File.join(@nom_dir, "weight")
         end
 
         def config_usage
@@ -222,12 +223,6 @@ module Nom
             @inputs_at[date] << entry
 
             status
-        end
-
-        def edit_file filename
-            editor = ENV["EDITOR"]
-            editor = "vim" if editor.nil?
-            system("#{editor} #{ENV["HOME"]}/.nom/#{filename}")
         end
 
         def allowed_kcal date, r=nil

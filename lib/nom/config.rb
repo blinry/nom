@@ -1,3 +1,5 @@
+require "nom/helpers"
+
 module Nom
     class Config
         def initialize file
@@ -12,23 +14,11 @@ module Nom
                 # format: [ key, description, default_value, type ]
                 "rate" => [ "how much weight you want to lose per week", 0.5, Float ],
                 "goal" => [ "your target weight", nil, Float],
-                "image_viewer" => [ "your preferred SVG viewer, for example 'eog -f', 'firefox', 'chromium'", guess_image_viewer, String ],
+                "image_viewer" => [ "your preferred SVG viewer, for example 'eog -f', 'firefox', 'chromium'", Helpers::default_program, String ],
                 "unit" => [ "your desired base unit in kcal", 1, Float ],
                 "start_date" => [ "the first day that should be considered by nom [yyyy-mm-dd]", nil, Date ],
                 "balance_start" => [ "the day from which on nom should keep track of a energy balance [yyyy-mm-dd]", nil, Date ],
             }
-        end
-
-        def guess_image_viewer
-            if RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/
-                "start"
-            elsif RbConfig::CONFIG['host_os'] =~ /darwin/
-                "open"
-            elsif RbConfig::CONFIG['host_os'] =~ /linux|bsd/
-                "xdg-open"
-            else
-                nil
-            end
         end
 
         def has key
