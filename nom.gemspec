@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name        = "nom"
-  s.version     = "0.1.0"
+  s.version     = "0.1.1"
   s.add_runtime_dependency "nokogiri", "~> 1.6"
   s.executables << "nom"
-  s.date        = "2015-07-03"
+  s.date        = "2015-07-08"
   s.summary     = "Lose weight and hair through stress and poor nutrition"
   s.description = "nom is a command line tool that helps you lose weight by
                    tracking your energy intake and creating a negative feedback loop.
