@@ -12,44 +12,9 @@ Then run this command:
 
 When you run `nom` for the first time, it will ask for your current and your desired weight.
 
-# Basics
-
-*nom* operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
-
-By default, energy quantities will have the unit "kcal". You can change this by adding a line like `unit: 0.239` to your `~/.nom/config`, which means you want to use the unit "0.239 kcal" (= "1 kJ"). Energy quantities are displayed in parentheses: `(42)`
-
-Weight quantities are displayed as "kg", but you can use arbitrary units, like pounds.
-
 # Usage
 
-Enter `nom help` if you're lost:
-
-    Available subcommands:
-          status                      Display a short food log
-       w, weight <weight>             Report a weight measurement
-       s, search <term>               Search for a food item in the web
-       n, nom <description> <energy>  Report that you ate something
-       y, yesterday <desc.> <energy>  Like nom, but for yesterday
-       p, plot                        Plot a weight/intake graph
-       l, log                         Display the full food log
-       g, grep <term>                 Search in the food log
-       e, edit                        Edit the input file
-      ew, editw                       Edit the weight file
-          help                        Print this help
-    There are some useful defaults:
-          (no arguments)              status
-          <number>                    weight <number>
-          <term>                      search <term>
-          <term> <number>             nom <term> <number>
-    Configuration options (put these in /home/seb/.nom/config):
-          rate                        How much weight you want to lose per week (default: '0.5')
-          goal                        Your target weight
-          image_viewer                Your preferred svg viewer, for example 'eog -f', 'firefox', 'chromium' (default: 'xdg-open')
-          unit                        Your desired base unit in kcal (default: '1')
-          start_date                  The first day that should be considered by nom [yyyy-mm-dd]
-          balance_start               The day from which on nom should keep track of a energy balance [yyyy-mm-dd]
-
-So, call `nom` without arguments to get a summary of your current status:
+Call `nom` without arguments to get a summary of your current status:
 
     $ nom
     5.3 kg down (34%), 10.3 kg to go!
@@ -93,8 +58,44 @@ Enter your weight regularly:
 And get nice graphs. The upper graph shows weight over time, with a weighted (no pun intended) moving average, a weight prediction, and a green finish line. The lower graph shows daily energy intake targets and actual intake:
 
     $ nom plot
-    
+
 ![Graphs of weight and input over time](http://files.morr.cc/nom-0.1.0.svg)
+
+Enter `nom help` if you're lost:
+
+    Available subcommands:
+          status                      Display a short food log
+       w, weight <weight>             Report a weight measurement
+       s, search <term>               Search for a food item in the web
+       n, nom <description> <energy>  Report that you ate something
+       y, yesterday <desc.> <energy>  Like nom, but for yesterday
+       p, plot                        Plot a weight/intake graph
+       l, log                         Display the full food log
+       g, grep <term>                 Search in the food log
+       e, edit                        Edit the input file
+      ew, editw                       Edit the weight file
+       c, config                      Edit the config file (see below for options)
+          help                        Print this help
+    There are some useful defaults:
+          (no arguments)              status
+          <number>                    weight <number>
+          <term>                      search <term>
+          <term> <number>             nom <term> <number>
+    Configuration options (put these in /home/seb/.nom/config):
+          rate                        How much weight you want to lose per week (default: '0.5')
+          goal                        Your target weight
+          image_viewer                Your preferred svg viewer, for example 'eog -f', 'firefox', 'chromium' (default: 'xdg-open')
+          unit                        Your desired base unit in kcal (default: '1')
+          start_date                  The first day that should be considered by nom [yyyy-mm-dd]
+          balance_start               The day from which on nom should keep track of a energy balance [yyyy-mm-dd]
+
+# Conventions
+
+*nom* operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
+
+By default, energy quantities will have the unit "kcal". You can change this by adding a line like `unit: 0.239` to your `~/.nom/config`, which means you want to use the unit "0.239 kcal" (= "1 kJ"). Energy quantities are displayed in parentheses: `(42)`
+
+Weight quantities are displayed as "kg", but you can use arbitrary units, like pounds.
 
 ## License: GPLv2+
 
