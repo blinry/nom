@@ -23,14 +23,14 @@ module Nom
             @weights = WeightDatabase.new(File.join(@nom_dir, "weight"))
             @inputs = read_file("input", FoodEntry)
 
+            date = truncate_date
+            @inputs.delete_if{|i| i.date < date}
+            @weights.truncate(date)
+
             if @weights.empty?
                 print "Welcome to nom! Please enter your current weight: "
                 weight [STDIN.gets.chomp]
             end
-
-            date = truncate_date
-            @inputs.delete_if{|i| i.date < date}
-            @weights.truncate(date)
 
             @weights.interpolate_gaps!
             @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
@@ -284,6 +284,10 @@ module Nom
         end
 
         def truncate_date
+            if Date.today - @weights.last_real > 30
+                return Date.today
+            end
+
             first_start = @weights.first
 
             if @config.has("start_date")
