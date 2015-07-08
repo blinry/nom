@@ -283,7 +283,7 @@ module Nom
         end
 
         def truncate_date
-            if Date.today - @weights.last_real > 30
+            if @weights.empty? or Date.today - @weights.last_real > 30
                 return Date.today
             end
 
