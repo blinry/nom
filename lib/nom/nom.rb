@@ -189,6 +189,10 @@ module Nom
             Helpers::open_file File.join(@nom_dir, "weight")
         end
 
+        def config
+            Helpers::open_file File.join(@nom_dir, "config")
+        end
+
         def config_usage
             @config.print_usage
         end

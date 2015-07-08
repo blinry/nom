@@ -15,6 +15,7 @@ commands = [
     [ "grep", "g", "<term>", "Search in the food log" ],
     [ "edit", "e", nil, "Edit the input file" ],
     [ "editw", "ew", nil, "Edit the weight file" ],
+    [ "config", "c", nil, "Edit the config file (see below for options)" ],
     [ "help", nil, nil, "Print this help" ],
 ]
 
