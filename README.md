@@ -2,7 +2,7 @@
 
 **nom** is a command line tool that helps you lose weight by tracking your energy intake and creating a negative feedback loop. It's inspired by John Walker's [The Hacker's Diet](https://www.fourmilab.ch/hackdiet/) and tries to automate things as much as possible.
 
-# Installation
+## Installation
 
 You'll need Ruby, Rubygems and gnuplot. On Windows, make sure that gnuplot's binary directory is added to your `PATH` during installation.
 
@@ -12,7 +12,7 @@ Then run this command:
 
 When you run `nom` for the first time, it will ask for your current and your desired weight.
 
-# Usage
+## Usage
 
 Call `nom` without arguments to get a summary of your current status:
 
@@ -89,7 +89,7 @@ Enter `nom help` if you're lost:
           start_date                  The first day that should be considered by nom [yyyy-mm-dd]
           balance_start               The day from which on nom should keep track of a energy balance [yyyy-mm-dd]
 
-# Conventions
+## Conventions
 
 *nom* operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
 
