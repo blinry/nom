@@ -4,7 +4,9 @@
 
 # Installation
 
-You'll need Ruby, Rubygems and gnuplot. Then run this command:
+You'll need Ruby, Rubygems and gnuplot. On Windows, make sure that gnuplot's binary directory is added to your `PATH` during installation.
+
+Then run this command:
 
     $ gem install nom
 
