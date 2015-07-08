@@ -4,11 +4,11 @@
 
 # Installation
 
-You'll need Ruby, Rubygems and gnuplot >= 5.0. Then run this command:
+You'll need Ruby, Rubygems and gnuplot. Then run this command:
 
-    $ gem install --prerelease nom
+    $ gem install nom
 
-When you run `nom` for the first time, it will ask for your current and your desired weight, as well as a target "weight loss per week" (0.5 is a good value).
+When you run `nom` for the first time, it will ask for your current and your desired weight.
 
 # Basics
 
