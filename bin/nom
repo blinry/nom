@@ -18,7 +18,7 @@ commands = [
     [ "help", nil, nil, "Print this help" ],
 ]
 
-nom = Nom.new
+nom = Nom::Nom.new
 
 cmd_name = ARGV.shift or "status"
 command = commands.find{|c| c[0] == cmd_name or c[1] == cmd_name}
