@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Sebastian Morr"]
   s.email       = "sebastian@morr.cc"
   s.files       = Dir.glob("{bin,lib}/**/*") + %w(README.md)
-  s.requirements << 'gnuplot >= 5.0'
+  s.requirements << 'gnuplot'
   s.homepage    = "https://github.com/blinry/nom"
   s.license     = "GPL-2.0+"
 end
