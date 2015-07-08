@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "nom"
-  s.version     = "0.1.1"
+  s.version     = "0.1.2"
   s.add_runtime_dependency "nokogiri", "~> 1.6"
   s.executables << "nom"
   s.date        = "2015-07-08"
