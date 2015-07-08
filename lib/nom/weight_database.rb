@@ -39,7 +39,7 @@ module Nom
         def predict_weights!(rate, goal, tail)
             d = (last)
             loop do
-                if (@weights[d] - goal).abs < 0.1
+                if (@weights[d] - goal).abs < 0.1 and d > Date.today
                     tail -= 1
                 end
                 if tail == 0
