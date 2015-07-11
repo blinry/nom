@@ -18,6 +18,7 @@ module Nom
                 "unit" => [ "your desired base unit in kcal", 1, Float ],
                 "start_date" => [ "the first day that should be considered by nom [yyyy-mm-dd]", nil, Date ],
                 "balance_start" => [ "the day from which on nom should keep track of a energy balance [yyyy-mm-dd]", nil, Date ],
+                "balance_factor" => [ "how many money units you'll have to pay per energy unit", 0.01, Float ],
             }
         end
 

@@ -355,8 +355,13 @@ module Nom
                 separator
                 entry(quantize(remaining), "remaining (#{(100-100.0*remaining/allowed_kcal(date)).round}% used)")
             end
-            if kcal_balance > 0
-                entry(quantize(kcal_balance.abs), "too much since #{balance_start}")
+            if kcal_balance > 0 and @config.has("balance_start")
+                cost = if @config.has("balance_factor")
+                           " (cost: %.2f)" % (@config.get("balance_factor")*quantize(kcal_balance)).round(2)
+                       else
+                           ""
+                       end
+                entry(quantize(kcal_balance), "too much since #{balance_start}#{cost}")
             end
         end
 
