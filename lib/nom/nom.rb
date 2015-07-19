@@ -197,6 +197,126 @@ module Nom
             @config.print_usage
         end
 
+        def stats
+            statistics = [
+                # [ description, streakable, lambda ]
+                ["weight loss", false, lambda {|d| @weights.moving_average_at(d) - @weights.moving_average_at(d+1)}],
+                ["days with input entries", true, lambda {|d| not inputs_at(d).empty?}],
+                ["days with weight entry", true, lambda {|d| @weights.real?(d)}],
+                ["days under goal", true, lambda {|d| inputs_at(d).inject(0){|sum, i| sum + i.kcal} <= allowed_kcal(d)}],
+                ["energy consumed", false, lambda {|d| sum = inputs_at(d).inject(0){|sum, i| sum + i.kcal}; sum == 0 ? nil : sum }],
+                ["energy under goal", false, lambda {|d| sum = inputs_at(d).inject(0){|sum, i| sum + i.kcal}; sum == 0 ? nil : allowed_kcal(d) - sum }],
+
+            ]
+            statistics.each do |description, streakable, lam|
+                puts "#{description}"
+
+                if streakable
+                    streak = 0
+                    streak_start = nil
+                    longest_streak = 0
+                    longest_streak_start = nil
+                    @weights.first.upto(@weights.last_real-1) do |d|
+                        if lam.call(d)
+                            if streak == 0
+                                streak_start = d
+                            end
+                            streak += 1
+                        else
+                            if streak > longest_streak
+                                longest_streak = streak
+                                longest_streak_start = streak_start
+                            end
+                            streak = 0
+                        end
+                    end
+
+                    print "Longest streak: "
+                    if longest_streak_start
+                        print "#{longest_streak_start} - #{longest_streak_start+longest_streak-1} "
+                    end
+                    puts "(#{longest_streak} days)"
+
+                    print "Current streak: "
+                    if streak > 0
+                        print "#{streak_start} - #{streak_start+streak-1} "
+                    end
+                    puts "(#{streak} days)"
+                else
+                    values = @weights.first.upto(@weights.last_real-1).map{|d| [d, lam.call(d)]}.select{|d,v| v != nil}
+                    max = values.max_by{|d,v| v}
+                    min = values.min_by{|d,v| v}
+                    avg = values.inject(0){|sum, v| sum + v[1]}/values.size
+                    puts "Max: #{max[1]} on #{max[0]}"
+                    puts "Min: #{min[1]} on #{min[0]}"
+                    puts "Avg: #{avg}/day, #{avg*7}/week"
+
+                end
+                puts
+            end
+=begin
+            balances = []
+            missing_inputs = 0
+            streak = 0
+            streak_start = nil
+            longest_streak = 0
+            longest_streak_start = nil
+            @weights.first.upto(@weights.last_real) do |d|
+                if consumed_at(d) == 0
+                    missing_inputs += 1
+                else
+                    balances << consumed_at(d) - allowed_kcal(d)
+                end
+
+                if consumed_at(d) <= allowed_kcal(d)
+                    if streak == 0
+                        streak_start = d
+                    end
+                    streak += 1
+                else
+                    if streak > longest_streak
+                        longest_streak = streak
+                        longest_streak_start = streak_start
+                    end
+                    streak = 0
+                end
+            end
+            avg = balances.inject(0){|sum, d| sum + d}/balances.size
+
+            puts "Days without input: #{missing_inputs}"
+            puts "Ate an average of (#{quantize(avg)}) too much per day. High: (#{quantize(balances.max)}) Low: (#{quantize(balances.min)})"
+            rate = (@weights.at(@weights.first)-@weights.at(@weights.last_real))/(@weights.last_real-@weights.first)*7
+            puts "Effective loss rate: #{rate.round(1)} kg/week"
+            puts "Longest streak: #{longest_streak_start} - #{longest_streak_start+longest_streak-1} (#{longest_streak} days)"
+
+            rate_dat = Tempfile.new("rate")
+            @weights.first.upto(@weights.last_real-1) do |d|
+                if consumed_at(d) != 0 and @weights.real?(d) and @weights.real?(d+1)
+                    #rate_dat << "#{(weight_at(d+1)-weight_at(d))*7}\t#{consumed_at(d)}\n"
+                    #rate_dat << "#{(moving_average_at(d+1)-moving_average_at(d))*7}\t#{allowed_kcal(d)}\n"
+                    #rate_dat << "#{(moving_average_at(d+1)-moving_average_at(d))*7}\t#{consumed_at(d)-allowed_kcal(d)}\n"
+                    rate_dat << "#{(@weights.at(d+1)-@weights.at(d))*7}\t#{consumed_at(d)-allowed_kcal(d)}\n"
+                    #rate_dat << "#{consumed_at(d)}\t#{allowed_kcal(d)}\n"
+                end
+            end
+            rate_dat.close
+
+            svg = Tempfile.new(["plot", ".svg"])
+            svg.close
+
+            plt_erb = IO.read(File.join(File.dirname(__FILE__), "stats.plt.erb"))
+
+            plt = Tempfile.new("plt")
+            plt << ERB.new(plt_erb).result(binding)
+            plt.close
+
+            system("gnuplot "+plt.path)
+
+            image_viewer = @config.get("image_viewer")
+            system(image_viewer+" "+svg.path)
+=end
+        end
+
         private
 
         def nom_entry args, date

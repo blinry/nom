@@ -1,0 +1,37 @@
+set terminal svg size 1440,900 font "Linux Biolinum,20"
+set output "<%= svg.path %>"
+
+set multiplot layout 2,1
+
+set border 11
+
+set fit quiet
+set fit logfile "/dev/null"
+
+#set xdata time
+#set timefmt "%Y-%m-%d"
+#set format x "%Y-%m"
+set grid
+set lmargin 6
+
+#set xrange [ "<%= @weights.first %>" : "<%= @weights.last_real+days_to_go %>" ]
+#set yrange [ 1600 : 2400 ]
+#set ytics 1 nomirror
+#set mxtics 1
+#set xtics 1
+
+set obj 1 rectangle behind from screen 0,0 to screen 1,1
+set obj 1 fillstyle solid 1.0 fillcolor rgb "white" linewidth 0
+
+#f(x) = a*x + b
+#fit f(x) "<%= rate_dat.path %>" u 1:2 via a, b
+
+plot "<%= rate_dat.path %>" using 1:2 w points t "Weight" pt 13 ps 0.3 lc rgb "navy", x
+
+unset obj 1
+
+#set yrange [ 0 : <%= quantize((@weights.first..@weights.last_real).map{|d| [consumed_at(d), allowed_kcal(d, 0)]}.flatten.max) %> ]
+#set ytics 200 nomirror
+#
+
+unset multiplot

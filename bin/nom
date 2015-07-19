@@ -16,6 +16,7 @@ commands = [
     [ "edit", "e", nil, "Edit the input file" ],
     [ "editw", "ew", nil, "Edit the weight file" ],
     [ "config", "c", nil, "Edit the config file (see below for options)" ],
+    [ "stats", nil, nil, "Print some statistics" ],
     [ "help", nil, nil, "Print this help" ],
 ]
 
