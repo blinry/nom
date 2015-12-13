@@ -201,10 +201,12 @@ module Nom
 
         def nom_entry args, date
             summands = args.pop.split("+")
-            kcal = summands.inject(0) do |sum, summand|
+            number = summands.inject(0) do |sum, summand|
                 factors = summand.split("x")
                 sum + factors.map{ |f| f.to_f }.inject(1){ |p,f| p*f }
             end
+
+            kcal = dequantize(number)
 
             if kcal == 0
                 raise "energy term cannot be zero"
@@ -305,7 +307,11 @@ module Nom
         end
 
         def quantize kcal
-            return (1.0*kcal/@config.get("unit")).round
+            (1.0*kcal/@config.get("unit")).round
+        end
+
+        def dequantize number
+            (1.0*number*@config.get("unit")).round
         end
 
         def format_date date
@@ -353,7 +359,7 @@ module Nom
                     remaining -= i.kcal
                 end
                 separator
-                entry(quantize(remaining), "remaining (#{(100-100.0*remaining/allowed_kcal(date)).round}% used)")
+                entry(quantize(remaining), "remaining (#{(100-100.0*quantize(remaining)/quantize(allowed_kcal(date))).round}% used)")
             end
             if kcal_balance > 0 and @config.has("balance_start")
                 cost = if @config.has("balance_factor")
