@@ -355,8 +355,8 @@ module Nom
             if r.nil?
                 r = @weights.rate_at(date, goal, rate)
             end
-            if date > @weights.last
-                date = @weights.last
+            if date > @weights.last_real
+                date = @weights.last_real
             end
             @base_rate_at[date] + r*1000
         end
