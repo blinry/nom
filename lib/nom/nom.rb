@@ -121,7 +121,7 @@ module Nom
                     size = serving.css("a.servb").text
                     kcal = serving.css("div")[5].css("div")[1].text.to_i
                     #kj = serving.css("div")[2].css("div")[1].text.to_i
-                    puts "    (#{quantize(kcal)}) #{size}"
+                    puts "    (#{quantize(kcal,1)}) #{size}"
                 end
             end
         end
@@ -306,8 +306,8 @@ module Nom
             end
         end
 
-        def quantize kcal
-            (1.0*kcal/@config.get("unit")).round
+        def quantize kcal, decimal_places=0
+            (1.0*kcal/@config.get("unit")).round(decimal_places)
         end
 
         def dequantize number
