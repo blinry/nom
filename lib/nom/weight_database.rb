@@ -27,7 +27,7 @@ module Nom
         end
 
         def precompute_moving_average!(alpha, beta, goal, rate)
-            trend = dampened_rate(@weights[first], goal, rate)/7.0
+            trend = 0
 
             @moving_averages[first] = at(first)
             (first+1).upto(last).each do |d|

@@ -34,9 +34,9 @@ module Nom
             end
 
             @weights.interpolate_gaps!
-            @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
+            @weights.precompute_moving_average!(0.05, 0.05, goal, rate)
             @weights.predict_weights!(rate, goal, 30)
-            @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
+            @weights.precompute_moving_average!(0.05, 0.05, goal, rate)
 
             precompute_inputs_at
             precompute_base_rate_at
@@ -349,17 +349,16 @@ module Nom
         def log_since start
             remaining = 0
             start.upto(Date.today) do |date|
-                remaining += allowed_kcal(date)
                 puts
                 puts "#{format_date(date)}: (#{quantize(allowed_kcal(date))})"
                 puts
-                remaining = allowed_kcal(date)
+                remaining = quantize(allowed_kcal(date))
                 inputs_at(date).each do |i|
                     entry(quantize(i.kcal), i.description)
-                    remaining -= i.kcal
+                    remaining -= quantize(i.kcal)
                 end
                 separator
-                entry(quantize(remaining), "remaining (#{(100-100.0*quantize(remaining)/quantize(allowed_kcal(date))).round}% used)")
+                entry(remaining, "remaining (#{(100-100.0*remaining/quantize(allowed_kcal(date))).round}% used)")
             end
             if kcal_balance > 0 and @config.has("balance_start")
                 cost = if @config.has("balance_factor")
