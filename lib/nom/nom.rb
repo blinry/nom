@@ -106,7 +106,7 @@ module Nom
             term = args.join(" ")
             puts
             term = term.encode("ISO-8859-1")
-            url = "http://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{URI.escape(term)}"
+            url = "https://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{URI.escape(term)}"
 
             page = Nokogiri::HTML(open(url))
             results = page.css(".standardcontent a").map{|a| a["href"]}.select{|href| href.include? "lebensmittel"}
