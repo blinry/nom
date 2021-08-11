@@ -106,13 +106,13 @@ module Nom
             term = args.join(" ")
             puts
             term = term.encode("ISO-8859-1")
-            url = "https://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{URI.escape(term)}"
+            url = "https://fddb.info/db/de/suche/?udd=0&cat=site-de&search=#{CGI.escape(term)}"
 
-            page = Nokogiri::HTML(open(url))
+            page = Nokogiri::HTML(URI.open(url))
             results = page.css(".standardcontent a").map{|a| a["href"]}.select{|href| href.include? "lebensmittel"}
 
             results[0..4].each do |result|
-                page = Nokogiri::HTML(open(result))
+                page = Nokogiri::HTML(URI.open(result))
                 title = page.css(".breadcrumb a").last.text
                 brand = page.css(".standardcontent p a").select{|a| a["href"].include? "hersteller"}.first.text
                 puts "#{title} (#{brand})"
