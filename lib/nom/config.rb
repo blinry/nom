@@ -45,6 +45,11 @@ module Nom
                 raise "Unknown configuration option '#{key}'"
             end
 
+            if key == "rate" and @config["rate"] < 0.1
+               puts "Warning: rates smaller than 0.1 are not supported, capping to 0.1"
+               0.1
+            end
+
             if @defaults[key][2] == Float
                 v.to_f
             elsif @defaults[key][2] == Date
