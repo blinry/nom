@@ -19,9 +19,19 @@ commands = [
     [ "help", nil, nil, "Print this help" ],
 ]
 
+aliases = {
+    "--help": "help",
+    "-h": "help",
+}
+
 nom = Nom::Nom.new
 
 cmd_name = ARGV.shift or "status"
+
+if aliases.include? cmd_name.to_sym
+    cmd_name = aliases[cmd_name.to_sym]
+end
+
 command = commands.find{|c| c[0] == cmd_name or c[1] == cmd_name}
 
 if command.nil?
