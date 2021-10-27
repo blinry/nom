@@ -91,7 +91,7 @@ Enter `nom help` if you're lost:
 
 ## Conventions
 
-*nom* looks for its configuration directory in `~/.local/share/nom`, or `~/.nom/` (in that order),
+*nom* looks for its configuration directory in `${XDG_DATA_HOME}/nom`, `~/.local/share/nom`, or `~/.nom/` (in that order),
 and operates on three files in that configuration directory:
 * `config` contains configuration settings
 * `input` contains stuff you ate
