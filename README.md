@@ -91,9 +91,14 @@ Enter `nom help` if you're lost:
 
 ## Conventions
 
-*nom* operates on three files in the directory `~/.nom/`: `config` contains configuration settings, `input` contains stuff you ate, `weight` contains weight measurements. You can edit them by hand.
+*nom* looks for its configuration directory in `${XDG_DATA_HOME}/nom`, `~/.local/share/nom`, or `~/.nom/` (in that order),
+and operates on three files in that configuration directory:
+* `config` contains configuration settings
+* `input` contains stuff you ate
+* `weight` contains weight measurements.
+The files are plain text, you can edit them by hand.
 
-By default, energy quantities will have the unit "kcal". You can change this by adding a line like `unit: 0.239` to your `~/.nom/config`, which means you want to use the unit "0.239 kcal" (= "1 kJ"). Energy quantities are displayed in parentheses: `(42)`
+By default, energy quantities will have the unit "kcal". You can change this by adding a line like `unit: 0.239` to your `config`, which means you want to use the unit "0.239 kcal" (= "1 kJ"). Energy quantities are displayed in parentheses: `(42)`
 
 Weight quantities are displayed as "kg", but you can use arbitrary units, like pounds.
 
