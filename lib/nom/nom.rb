@@ -13,8 +13,15 @@ require "nom/helpers"
 module Nom
     class Nom
         def initialize
-            @nom_dir = File.join(Dir.home,".nom")
-            if not Dir.exists? @nom_dir
+            preferred_config_location = File.join(".local", "share", "nom")
+            [ preferred_config_location, File.join(Dir.home,".nom") ].each do |dir|
+                if Dir.exists? dir
+                    @nom_dir = dir
+                    break
+                end
+            end
+            if not @nom_dir or not Dir.exists? @nom_dir
+                @nom_dir = preferred_config_location
                 puts "Creating #{@nom_dir}"
                 Dir.mkdir(@nom_dir)
             end
