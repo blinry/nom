@@ -26,7 +26,7 @@ aliases = {
 
 nom = Nom::Nom.new
 
-cmd_name = ARGV.shift or "status"
+cmd_name = (ARGV.shift or "status")
 
 if aliases.include? cmd_name.to_sym
     cmd_name = aliases[cmd_name.to_sym]
