@@ -120,7 +120,7 @@ module Nom
             results = page.css(".standardcontent a").map{|a| a["href"]}.select{|href| href.include? "lebensmittel"}
 
             results[0..4].each do |result|
-                page = Nokogiri::HTML(URI.open(result))
+                page = Nokogiri::HTML(URI.open("https://fddb.info"+result))
                 title = page.css(".breadcrumb a").last.text
                 brand = page.css(".standardcontent p a").select{|a| a["href"].include? "hersteller"}.first.text
                 puts "#{title} (#{brand})"
