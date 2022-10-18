@@ -7,7 +7,7 @@ module Nom
 
             @config = {}
             if File.exists? file
-                @config = YAML.load_file(file)
+                @config = YAML.load_file(file, permitted_classes: [Date])
             end
 
             @defaults = {
