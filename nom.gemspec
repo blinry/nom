@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = "nom"
-  s.version     = "0.1.4"
+  s.version     = "0.1.5"
   s.add_runtime_dependency "nokogiri", "~> 1.6"
   s.executables << "nom"
   s.summary     = "Lose weight and hair through stress and poor nutrition"
