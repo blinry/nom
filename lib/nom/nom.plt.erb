@@ -16,6 +16,7 @@ set yrange [ <%= [goal-1, @weights.min].min.floor %> : <%= [goal+1, @weights.max
 set ytics 1 nomirror
 set mxtics 1
 set xtics 2592000 nomirror
+set ylabel "Weight [kg]" offset 2
 
 set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white" linewidth 0
@@ -33,6 +34,7 @@ unset obj 1
 set yrange [ 0 : <%= quantize((@weights.first..@weights.last).map{|d| [consumed_at(d), allowed_kcal(d, 0), allowed_kcal(d, rate)]}.flatten.max) %> ]
 set ytics <%= quantize(200) %> nomirror
 set key right bottom
+set ylabel "Energy [kcal*<<unit>>]" offset 3
 
 plot "<%= input_dat.path %>" using 1:2:(0):($4-$2) w vectors nohead lc rgb "navy" notitle, \
 "<%= input_dat.path %>" using 1:2 w points pt 13 ps 0.3 lc rgb "navy" t "Consumed energy", \
