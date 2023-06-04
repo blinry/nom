@@ -27,7 +27,7 @@ module Nom
         end
 
         def precompute_moving_average!(alpha, beta, goal, rate)
-            trend = 0
+            trend = -rate/8
 
             @moving_averages[first] = at(first)
             (first+1).upto(last).each do |d|

@@ -5,10 +5,10 @@ require "uri"
 require "tempfile"
 require "erb"
 
-require "nom/food_entry"
-require "nom/config"
-require "nom/weight_database"
-require "nom/helpers"
+require_relative "./food_entry"
+require_relative "./config"
+require_relative "./weight_database"
+require_relative "./helpers"
 
 module Nom
     class Nom
@@ -16,12 +16,12 @@ module Nom
             xdg_data = (ENV["XDG_DATA_HOME"] or File.join(Dir.home, ".local", "share"))
             preferred_config_location = File.join(xdg_data, "nom")
             [ preferred_config_location, File.join(Dir.home,".nom") ].each do |dir|
-                if Dir.exists? dir
+                if Dir.exist? dir
                     @nom_dir = dir
                     break
                 end
             end
-            if not @nom_dir or not Dir.exists? @nom_dir
+            if not @nom_dir or not Dir.exist? @nom_dir
                 @nom_dir = preferred_config_location
                 puts "Creating #{@nom_dir}"
                 Dir.mkdir(@nom_dir)
@@ -42,9 +42,9 @@ module Nom
             end
 
             @weights.interpolate_gaps!
-            @weights.precompute_moving_average!(0.05, 0.05, goal, rate)
+            @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
             @weights.predict_weights!(rate, goal, 30)
-            @weights.precompute_moving_average!(0.05, 0.05, goal, rate)
+            @weights.precompute_moving_average!(0.1, 0.1, goal, rate)
 
             precompute_inputs_at
             precompute_base_rate_at

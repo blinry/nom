@@ -1,4 +1,4 @@
-require "nom/helpers"
+require_relative "./helpers"
 
 module Nom
     class Config
@@ -6,7 +6,7 @@ module Nom
             @file = file
 
             @config = {}
-            if File.exists? file
+            if File.exist? file
                 @config = YAML.load_file(file, permitted_classes: [Date])
             end
 
