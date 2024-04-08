@@ -9,7 +9,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         ruby = pkgs.ruby_3_2.withPackages (ps: with ps; [ nokogiri ]);
-        deps = [ ruby pkgs.gnuplot pkgs.gnome3.eog ];
+        deps = [ ruby pkgs.gnuplot pkgs.gnome3.eog pkgs.libertinus ];
       in
       {
         devShells.default =
