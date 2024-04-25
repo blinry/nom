@@ -37,10 +37,11 @@ set xtics 2592000 nomirror
 set obj 1 rectangle behind from screen 0,0 to screen 1,1
 set obj 1 fillstyle solid 1.0 fillcolor rgb "white" linewidth 0
 
-set obj 2 rectangle behind from "<%= @weights.first %>",<%= goal-1 %> to "<%= plot_end %>",<%= goal+1 %>
+set obj 2 rectangle behind from "<%= @weights.first %>",<%= goal %> to "<%= plot_end %>",<%= goal+3 %>
 set obj 2 fillstyle solid 0.2 fillcolor rgb "green" linewidth 0
 
 plot <%= goal %> t "Goal" lc rgb "forest-green" lw 2, \
+<%= goal+3 %> t "" lc rgb "red" lw 2, \
 "<%= weight_dat.path %>" using 1:2 w points t "Weight" pt 13 ps 0.3 lc rgb "navy", \
 "<%= weight_dat.path %>" using 1:3 w l t "" lt 1 lw 2 lc rgb "navy", \
 "<%= weight_dat.path %>" using 1:4 w points t "" lc rgb "navy" pt 7 ps 0.2
@@ -50,9 +51,7 @@ unset obj 1
 set yrange [ 0 : <%= quantize((@weights.first..@weights.last).map{|d| [consumed_at(d), allowed_kcal(d, 0), allowed_kcal(d, rate)]}.flatten.max) %> ]
 set ytics <%= quantize(200) %> nomirror
 
-plot "<%= input_dat.path %>" using 1:2:(0):($4-$2) w vectors nohead lc rgb "navy" notitle, \
-"<%= input_dat.path %>" using 1:2 w points pt 13 ps 0.3 lc rgb "navy" t "Consumed energy", \
-"<%= input_dat.path %>" using 1:3 w lines lc rgb "black" t "0 kg/week", \
-"<%= input_dat.path %>" using 1:4 w lines lc rgb "forest-green" lw 2 t "<%= rate %> kg/week"
+plot "<%= input_dat.path %>" using 1:2:(0):(-$2) w vectors nohead lc rgb "navy" notitle, \
+"<%= input_dat.path %>" using 1:2 w points pt 13 ps 0.3 lc rgb "navy" t "Consumed kcal"
 
 unset multiplot
